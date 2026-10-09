@@ -96,36 +96,28 @@ const ROLES: {
   icon: string
   title: string
   body: string
-  link: string
-  linkIcon: string
   badge: string
 }[] = [
   {
     id: 'teacher',
     icon: 'school',
-    title: 'Educator / Teacher',
-    body: 'Create quick quizzes and discover what your class needs.',
-    link: 'Classroom Analytics',
-    linkIcon: 'arrow_forward',
-    badge: 'Role: High School Educator',
+    title: 'Teacher',
+    body: 'Run quizzes and see what your class needs.',
+    badge: 'Teacher',
   },
   {
     id: 'student',
     icon: 'explore',
-    title: 'High School Student',
-    body: 'Practice at your own pace with low-stress feedback.',
-    link: 'Self-Paced Mastery',
-    linkIcon: 'arrow_forward',
-    badge: 'Role: Science Student',
+    title: 'Student',
+    body: 'Practice at your own pace.',
+    badge: 'Student',
   },
   {
     id: 'parent',
     icon: 'diversity_1',
-    title: 'Parent & Guardian',
-    body: 'Follow your child’s learning with practical tips at home.',
-    link: 'Home Inquiry Prompts',
-    linkIcon: 'home_work',
-    badge: 'Role: Parent Guardian',
+    title: 'Parent or guardian',
+    body: 'Get weekly updates on your child.',
+    badge: 'Parent',
   },
 ]
 
@@ -170,11 +162,8 @@ function LoginPanel({ dimmed, onSignup }: { dimmed: boolean; onSignup: () => voi
     >
       <div className="flex items-center justify-between pb-6 mb-6 bg-surface-container-low -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 md:-mx-10 md:-mt-10 p-6 md:p-8 rounded-t-2xl">
         <div>
-          <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary-container font-semibold">
-            Member Portal
-          </span>
           <h1 id="login-title" className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mt-1">
-            Welcome back to Compass
+            Welcome back
           </h1>
         </div>
         <div className="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center text-primary shrink-0">
@@ -182,7 +171,7 @@ function LoginPanel({ dimmed, onSignup }: { dimmed: boolean; onSignup: () => voi
         </div>
       </div>
       <p className="font-body-md text-body-md text-on-surface-variant mb-6">
-        Resume conceptual reflections, diagnostic classroom threads, and personalized home inquiries.
+        Pick up where you left off.
       </p>
       <form className="space-y-5" onSubmit={submit} noValidate>
         <Field id="login-email" label="Email address" icon="mail" error={errors.email}>
@@ -233,9 +222,8 @@ function LoginPanel({ dimmed, onSignup }: { dimmed: boolean; onSignup: () => voi
         <div className="flex items-center justify-between pt-1">
           <label className="flex items-center gap-2.5 cursor-pointer select-none">
             <input defaultChecked className="w-4 h-4 rounded cursor-pointer accent-primary-container" type="checkbox" />
-            <span className="font-body-sm text-body-sm text-on-surface-variant">Keep diagnostic session active</span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant">Keep me signed in</span>
           </label>
-          <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-secondary">SSL Encrypted</span>
         </div>
         <button
           type="submit"
@@ -257,13 +245,13 @@ function LoginPanel({ dimmed, onSignup }: { dimmed: boolean; onSignup: () => voi
           <div className="w-full h-px bg-surface-container-high" />
         </div>
         <span className="relative px-4 bg-surface-container-lowest font-label-sm text-label-sm uppercase tracking-wider text-outline">
-          or begin anew
+          or
         </span>
       </div>
       <div className="rounded-xl bg-surface-container-low p-4 flex items-center justify-between gap-4">
         <div>
           <p className="font-title-sm text-title-sm text-on-surface">New to Compass?</p>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">Join as Educator, Student, or Parent guardian.</p>
+          <p className="font-body-sm text-body-sm text-on-surface-variant">Join as a teacher, student, or parent.</p>
         </div>
         <button
           type="button"
@@ -272,16 +260,6 @@ function LoginPanel({ dimmed, onSignup }: { dimmed: boolean; onSignup: () => voi
         >
           Sign up
         </button>
-      </div>
-      <div className="mt-8 pt-6 flex flex-wrap items-center justify-between gap-3 text-secondary">
-        <div className="flex items-center gap-1.5 font-label-sm text-label-sm">
-          <Icon name="verified" className="text-[16px]" />
-          <span>FERPA / COPPA Compliant</span>
-        </div>
-        <div className="flex items-center gap-1.5 font-label-sm text-label-sm">
-          <Icon name="psychology_alt" className="text-[16px]" />
-          <span>Misconception Taxonomy v3.4</span>
-        </div>
       </div>
     </section>
   )
@@ -300,8 +278,6 @@ function SignupPanel({ dimmed }: { dimmed: boolean }) {
   const [agreed, setAgreed] = useState(true)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
-
-  const credentialsStarted = Boolean(name || email || password)
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
@@ -335,44 +311,9 @@ function SignupPanel({ dimmed }: { dimmed: boolean }) {
       }`}
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 bg-surface-container-low -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 md:-mx-10 md:-mt-10 p-6 md:p-8 rounded-t-2xl">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="font-label-sm text-label-sm uppercase tracking-wider text-primary-container font-semibold">
-              Step-by-Step Onboarding
-            </span>
-            <span className="px-2 py-0.5 rounded-full bg-secondary-fixed text-primary font-label-sm text-label-sm">
-              Multi-Tier Inquiry
-            </span>
-          </div>
-          <h2 id="signup-title" className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mt-1">
-            Begin your scientific journey
-          </h2>
-        </div>
-        <ol className="flex items-center gap-2 self-start sm:self-center">
-          <li className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-container text-on-primary font-label-sm text-label-sm shadow-sm">
-            <span className="w-5 h-5 rounded-full bg-on-primary text-primary-container flex items-center justify-center font-bold text-[11px]">
-              {credentialsStarted ? <Icon name="check" className="text-[13px]" /> : 1}
-            </span>
-            <span>Role Selection</span>
-          </li>
-          <li aria-hidden="true" className="text-outline-variant font-bold">
-            /
-          </li>
-          <li
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full font-label-sm text-label-sm transition-colors ${
-              credentialsStarted ? 'bg-primary-container text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant'
-            }`}
-          >
-            <span
-              className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[11px] ${
-                credentialsStarted ? 'bg-on-primary text-primary-container' : 'bg-outline-variant text-on-surface'
-              }`}
-            >
-              2
-            </span>
-            <span>Account Credentials</span>
-          </li>
-        </ol>
+        <h2 id="signup-title" className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary">
+          Create your account
+        </h2>
       </div>
       <form className="space-y-8" onSubmit={submit} noValidate>
         <fieldset className="space-y-4" aria-labelledby="role-heading">
@@ -383,7 +324,6 @@ function SignupPanel({ dimmed }: { dimmed: boolean }) {
                 Who are you?
               </h3>
             </div>
-            <span className="font-body-sm text-body-sm text-on-surface-variant italic">Tailors your diagnostic dashboards</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
             {ROLES.map((r) => {
@@ -420,17 +360,8 @@ function SignupPanel({ dimmed }: { dimmed: boolean }) {
                     </div>
                   </div>
                   <div>
-                    {selected && (
-                      <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container-lowest text-primary inline-block mb-1 font-semibold">
-                        Active Selection
-                      </span>
-                    )}
                     <h4 className={`font-title-sm text-title-sm mb-1 ${selected ? 'text-primary' : 'text-on-surface'}`}>{r.title}</h4>
                     <p className="font-body-sm text-body-sm text-on-surface-variant leading-snug">{r.body}</p>
-                  </div>
-                  <div className="mt-4 pt-3 flex items-center gap-1.5 text-primary-container font-label-sm text-label-sm">
-                    <span>{r.link}</span>
-                    <Icon name={r.linkIcon} className="text-[14px]" />
                   </div>
                 </label>
               )
@@ -442,7 +373,7 @@ function SignupPanel({ dimmed }: { dimmed: boolean }) {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <span className="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">Step 2</span>
-              <h3 className="font-headline-md text-headline-md text-on-surface">Account Details</h3>
+              <h3 className="font-headline-md text-headline-md text-on-surface">Your details</h3>
             </div>
             <span aria-live="polite" className="font-label-sm text-label-sm px-3 py-1 rounded-full bg-secondary-fixed text-primary font-semibold">
               {activeRole.badge}
@@ -456,7 +387,7 @@ function SignupPanel({ dimmed }: { dimmed: boolean }) {
                   autoComplete="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder={role === 'parent' ? 'Dr. Eleanor Vance or Minji’s Guardian' : role === 'student' ? 'Minji Kim' : 'Dr. Eleanor Vance'}
+                  placeholder={role === 'parent' ? 'Your full name' : role === 'student' ? 'Minji Kim' : 'Dr. Eleanor Vance'}
                   aria-invalid={!!errors.name}
                   aria-describedby={errors.name ? 'signup-name-error' : undefined}
                   className={`${input} pl-11 pr-4`}
@@ -493,10 +424,10 @@ function SignupPanel({ dimmed }: { dimmed: boolean }) {
               <div className="space-y-4 animate-fade-up">
                 <div className="flex items-center gap-2 text-primary font-title-sm text-title-sm">
                   <Icon name="account_balance" className="text-[20px]" />
-                  <span>School Department Affiliation</span>
+                  <span>Your school</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Field id="signup-school" label="Institutional School Name">
+                  <Field id="signup-school" label="School name">
                     <input
                       id="signup-school"
                       value={school}
@@ -505,7 +436,7 @@ function SignupPanel({ dimmed }: { dimmed: boolean }) {
                       className={`${input} px-4`}
                     />
                   </Field>
-                  <Field id="signup-subject" label="Subject Domain">
+                  <Field id="signup-subject" label="Subject">
                     <select id="signup-subject" className={`${input} px-4 cursor-pointer`}>
                       <option>AP Physics / Newtonian Mechanics</option>
                       <option>Chemistry / Stoichiometry</option>
@@ -521,9 +452,8 @@ function SignupPanel({ dimmed }: { dimmed: boolean }) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-primary font-title-sm text-title-sm">
                     <Icon name="group_add" className="text-[20px]" />
-                    <span>Link with your Science Teacher</span>
+                    <span>Join your class</span>
                   </div>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">Supplied by instructor</span>
                 </div>
                 <Field id="signup-classCode" label="Class Code" icon="pin" error={errors.classCode}>
                   <input
@@ -537,7 +467,7 @@ function SignupPanel({ dimmed }: { dimmed: boolean }) {
                   />
                 </Field>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  Entering your class code links you directly to your teacher’s diagnostic sets.
+                  Your teacher gives you this code.
                 </p>
               </div>
             )}
@@ -546,11 +476,8 @@ function SignupPanel({ dimmed }: { dimmed: boolean }) {
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-primary font-title-sm text-title-sm">
                     <Icon name="family_restroom" className="text-[20px]" />
-                    <span>Connect Student & Language Preference</span>
+                    <span>Connect to your child</span>
                   </div>
-                  <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-primary-container font-semibold whitespace-nowrap">
-                    Home Co-Pilot
-                  </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -567,7 +494,7 @@ function SignupPanel({ dimmed }: { dimmed: boolean }) {
                     </Field>
                     {!errors.inviteCode && (
                       <span className="font-label-sm text-label-sm text-on-surface-variant block mt-1">
-                        From student portal badge or teacher printout.
+                        Find it in your child’s student account.
                       </span>
                     )}
                   </div>
@@ -584,16 +511,9 @@ function SignupPanel({ dimmed }: { dimmed: boolean }) {
                       <Icon name="expand_more" className="absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-[18px]" />
                     </Field>
                     <span className="font-label-sm text-label-sm text-on-surface-variant block mt-1">
-                      Diagnostic summaries will be translated for home review.
+                      Weekly updates will be sent in this language.
                     </span>
                   </div>
-                </div>
-                <div className="p-3 bg-surface-container-lowest rounded-lg flex items-start gap-3">
-                  <Icon name="tips_and_updates" className="text-primary text-[20px] shrink-0 mt-0.5" />
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">
-                    <strong className="text-on-surface font-semibold">Empathetic reporting:</strong> Compass explains why your
-                    teenager chose a specific answer without showing punitive letter grades.
-                  </p>
                 </div>
               </div>
             )}
@@ -617,7 +537,7 @@ function SignupPanel({ dimmed }: { dimmed: boolean }) {
                 <a className="text-primary-container font-semibold hover:underline underline-offset-2" href="#terms">
                   terms of academic use
                 </a>
-                . We protect learner telemetry against external commercial profiling.
+                . Student data is never sold.
               </span>
             </label>
             {errors.agreed && <p className="mt-1 font-body-sm text-body-sm text-error">{errors.agreed}</p>}
@@ -629,7 +549,7 @@ function SignupPanel({ dimmed }: { dimmed: boolean }) {
             className="w-full min-h-[48px] py-3.5 px-6 rounded-lg bg-primary-container text-on-primary font-title-sm text-title-sm font-semibold tracking-wide shadow-md hover:bg-tertiary-container hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2 disabled:opacity-80 disabled:hover:translate-y-0"
           >
             <Icon name={submitting ? 'progress_activity' : 'verified_user'} className={`text-[18px] ${submitting ? 'animate-spin' : ''}`} />
-            <span>{submitting ? 'Creating your account…' : 'Create account'}</span>
+            <span>{submitting ? 'Creating account…' : 'Create account'}</span>
           </button>
         </div>
       </form>
@@ -665,12 +585,6 @@ export default function Auth() {
         <div className="pointer-events-none absolute bottom-12 -left-20 w-80 h-80 bg-secondary-fixed/50 rounded-full blur-3xl opacity-50" />
 
         <header className="relative z-10 flex flex-col items-center text-center mb-8 md:mb-12">
-          <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-surface-container-low shadow-sm mb-4">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="font-label-sm text-label-sm tracking-wider uppercase text-on-surface-variant">
-              Diagnostics & Conceptual Growth System
-            </span>
-          </div>
           <Link to="/" className="flex items-center justify-center gap-3.5 mb-3">
             <span className="w-12 h-12 rounded-xl bg-surface-container-lowest p-2 shadow-md flex items-center justify-center">
               <img alt="" className="w-9 h-9 object-contain" src="/images/logo.png" />
@@ -678,7 +592,7 @@ export default function Auth() {
             <span className="font-headline-lg text-headline-lg text-primary tracking-tight font-semibold">Compass</span>
           </Link>
           <p className="font-headline-sm text-headline-sm text-on-surface-variant max-w-xl mx-auto italic font-normal">
-            Empathetic diagnostics for the curious mind, the supportive home, and the inspired educator.
+            Find out why students get answers wrong.
           </p>
           <div role="tablist" aria-label="Account access" className="mt-6 inline-flex p-1 rounded-xl bg-surface-container-high shadow-inner">
             <button type="button" role="tab" aria-selected={mode === 'login'} onClick={() => navigate('/login')} className={tab(mode === 'login')}>
@@ -688,9 +602,6 @@ export default function Auth() {
             <button type="button" role="tab" aria-selected={mode === 'signup'} onClick={() => navigate('/signup')} className={tab(mode === 'signup')}>
               <Icon name="person_add" className="text-[18px]" />
               <span>Sign Up</span>
-              <span className="hidden sm:inline ml-1 px-2 py-0.5 rounded-full bg-secondary-fixed text-primary font-label-sm text-label-sm">
-                Role Based
-              </span>
             </button>
           </div>
         </header>
@@ -700,54 +611,17 @@ export default function Auth() {
           <SignupPanel dimmed={mode === 'login'} />
         </div>
 
-        <div className="relative z-10 mt-10 rounded-2xl bg-surface-container-low p-6 md:p-8 shadow-sm">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="max-w-xl">
-              <div className="inline-flex items-center gap-2 text-primary-container font-label-sm text-label-sm font-semibold mb-1">
-                <Icon name="psychology" className="text-[18px]" />
-                <span>Signature Compass Architecture</span>
-              </div>
-              <h3 className="font-headline-sm text-headline-sm text-on-surface mb-1">Beyond binary correct/incorrect scoring</h3>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">
-                Whether logged in as a parent analyzing Minji’s physics model or a teacher orchestrating 35 students, Compass
-                renders missteps as stepping stones.
-              </p>
-            </div>
-            <div className="flex items-center gap-3 shrink-0 bg-surface-container-lowest p-4 rounded-xl shadow-sm">
-              <div className="text-center px-3">
-                <div className="w-8 h-8 mx-auto rounded-full bg-error-container text-on-error-container flex items-center justify-center mb-1 font-bold text-label-sm">
-                  !
-                </div>
-                <span className="font-label-sm text-label-sm text-on-surface-variant block">Observed Path</span>
-                <span className="font-body-sm text-body-sm text-primary font-semibold">Intuitive Misconception</span>
-              </div>
-              <Icon name="east" className="text-outline-variant" />
-              <div className="text-center px-3">
-                <div className="w-8 h-8 mx-auto rounded-full bg-secondary-fixed text-primary flex items-center justify-center mb-1">
-                  <Icon name="model_training" className="text-[18px]" />
-                </div>
-                <span className="font-label-sm text-label-sm text-on-surface-variant block">Compass Remediation</span>
-                <span className="font-body-sm text-body-sm text-primary font-semibold">PhET Inquiry Loop</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <footer className="relative z-10 mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-on-surface-variant">
-          <div className="flex items-center gap-2">
-            <span className="font-label-sm text-label-sm uppercase tracking-wider text-outline font-semibold">Compass Academic Framework</span>
-            <span className="text-outline-variant">·</span>
-            <span className="font-body-sm text-body-sm text-on-surface-variant">Edition 2025.1</span>
-          </div>
+          <span className="font-body-sm text-body-sm">© 2025 Compass</span>
           <div className="flex flex-wrap justify-center items-center gap-6 font-body-sm text-body-sm">
             <Link className="hover:text-primary transition-colors" to="/app">
-              Educator Desk
+              Teacher demo
             </Link>
             <Link className="hover:text-primary transition-colors" to="/app/family">
-              Family Handbook
+              Parent demo
             </Link>
             <a className="hover:text-primary transition-colors" href="#privacy">
-              Privacy & Data Ethics
+              Privacy
             </a>
           </div>
         </footer>

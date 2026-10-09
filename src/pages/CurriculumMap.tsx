@@ -17,13 +17,9 @@ export default function CurriculumMap() {
   return (
     <div className="flex flex-col w-full pb-space-xl max-w-[1360px] mx-auto">
       <PageHeader
-        eyebrow="Diagnostic Workspace / Curriculum Map"
-        title={
-          <>
-            AP Physics 1 · <em className="font-normal">Conceptual pathway</em>
-          </>
-        }
-        description="Each unit shows which concepts are secure, which need review, and where misconceptions are clustering, so you can plan the term around understanding rather than coverage."
+        eyebrow="Curriculum Map"
+        title="AP Physics 1"
+        description="Progress by unit. Open a unit to see which topics need work."
         actions={
           <div className="flex flex-wrap gap-space-sm">
             <StatusBadge status="mastery" />
@@ -96,7 +92,7 @@ export default function CurriculumMap() {
                         to="/app/radar"
                         className="self-start inline-flex items-center gap-space-xs font-label-md text-label-md text-primary hover:underline"
                       >
-                        Open in Misconception Radar
+                        See misconceptions
                         <Icon name="arrow_forward" className="text-[16px]" />
                       </Link>
                     )}

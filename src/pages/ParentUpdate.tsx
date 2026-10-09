@@ -8,105 +8,96 @@ type Lang = 'en' | 'ko'
 const COPY = {
   en: {
     langName: 'English',
-    meta: '10th Grade · AP Physics 1 · Unit 3 Dynamics',
+    meta: '10th grade · AP Physics 1 · Unit 3',
     active: 'Active',
-    week: 'Week of Oct 14–18',
-    eyebrow: 'Weekly Narrative Diagnosis',
-    updated: 'Updated Friday afternoon',
-    title: 'A calm window into Minji’s conceptual growth.',
-    intro: 'We look beyond test numbers to see how your child makes sense of the physical world. Here is how Minji explored physics this past week.',
-    overviewEyebrow: 'Pedagogical Overview',
-    overviewTitle: 'This week in the classroom',
-    labs: '3 Labs Completed',
+    week: 'Week of Oct 14 to 18',
+    eyebrow: 'Weekly update',
+    updated: 'Friday',
+    title: 'Minji’s week in physics',
+    intro: 'What Minji learned, what she’s working on, and how you can help.',
+    overviewEyebrow: 'This week',
+    overviewTitle: 'In class',
+    labs: '3 labs',
     overviewBody:
-      'This week in Physics, the class explored how objects move when forces are balanced. Minji participated actively in the frictionless air-track lab and showed strong curiosity when investigating subtle momentum shifts.',
-    overviewNote:
-      'Dr. Vance noted that she posed thoughtful questions about everyday gravity and voluntarily assisted her lab partner in calibrating the ultrasonic motion detectors.',
-    labLabel: 'Lab Activity',
-    labTitle: 'Frictionless Surfaces & Vectors',
-    strengthEyebrow: 'Demonstrated Intuition',
-    strengthTitle: 'Strengths & Solid Ground',
-    mastery: 'Deep Mastery',
-    strengthQuote: '“Minji has completely mastered Newton’s first law in static equilibrium.”',
-    strengthBody:
-      'She can confidently identify balanced forces in stationary objects, like books resting on a table or hanging picture frames, correctly diagramming why the net force equals zero without hesitation.',
-    strengthA: 'Zero hesitation on static free-body diagrams',
-    strengthB: 'Clear verbal justification during peer reviews',
-    focusEyebrow: 'Gentle Focus Area',
-    focusTitle: 'What She’s Working On',
-    stepping: 'Natural Stepping Stone',
+      'The class studied how objects move when forces are balanced. Minji was active in the air-track lab and asked good questions.',
+    overviewNote: 'Dr. Vance noted that she helped her lab partner set up the motion sensors.',
+    labLabel: 'Lab',
+    labTitle: 'Air-track motion',
+    strengthEyebrow: 'Strengths',
+    strengthTitle: 'What she understands well',
+    mastery: 'Solid',
+    strengthQuote: '“Minji understands Newton’s first law for objects at rest.”',
+    strengthBody: 'She can draw the forces on a book sitting on a table and explain why they cancel out.',
+    strengthA: 'Draws force diagrams with ease',
+    strengthB: 'Explains her reasoning clearly',
+    focusEyebrow: 'Working on',
+    focusTitle: 'What she’s working on',
+    stepping: 'Common step',
     focusBody: (
       <>
-        She is currently building confidence with force diagrams when objects are <em>already in motion</em>. She
-        occasionally feels that continuous forward motion requires an active push to sustain it.
+        She is still learning how forces work on objects that are <em>already moving</em>. Sometimes she thinks something
+        needs a constant push to keep going.
       </>
     ),
-    focusNote:
-      'This is one of the most common and natural hurdles in high school physics (Aristotle felt the same way!). It represents a healthy pivot point in scientific reasoning.',
-    microTitle: 'Curated micro-exploration',
-    microBody: 'Compass has prepared 4 short interactive practice problems for her to explore this week at her own pace.',
-    preview: 'Preview Activities',
-    homeEyebrow: 'Family Connection',
-    homeTitle: 'How You Can Help at Home',
-    talk: '5-Minute Talk',
-    homeIntro: 'One simple conversation to try at home (no science knowledge required):',
-    prompt: '“Ask Minji to explain what happens to a hockey puck sliding across smooth ice when nobody touches it.”',
-    promptNote:
-      'Just listening to her explain it out loud helps her organize the concept. If she pauses or changes her mind halfway through, smile and let her ponder—that is where real understanding clicks!',
-    noPressure: 'No pressure, no quizzing. Just dinner-table curiosity.',
-    message: 'Message Dr. Vance (Teacher)',
-    privacy: 'Compass updates are private to your family and school. Zero punitive grading.',
+    focusNote: 'This is one of the most common ideas students have in physics. Aristotle thought so too.',
+    microTitle: 'Practice for this week',
+    microBody: '4 short problems she can do at her own pace.',
+    preview: 'Preview',
+    homeEyebrow: 'At home',
+    homeTitle: 'How you can help',
+    talk: '5 minutes',
+    homeIntro: 'Try this question at dinner. No science background needed.',
+    prompt: '“What happens to a hockey puck sliding on smooth ice if nobody touches it?”',
+    promptNote: 'Let her explain out loud. If she stops to think or changes her answer, that’s a good sign.',
+    noPressure: 'No quizzing. Just a conversation.',
+    message: 'Message Dr. Vance',
+    privacy: 'Only your family and the school can see these updates.',
   },
   ko: {
     langName: '한국어',
-    meta: '10학년 · AP 물리 1 · 3단원 역학',
+    meta: '10학년 · AP 물리 1 · 3단원',
     active: '활동 중',
-    week: '10월 14–18일 주간',
-    eyebrow: '주간 서술형 진단',
-    updated: '금요일 오후 업데이트',
-    title: '민지의 개념적 성장을 차분히 들여다보는 창.',
-    intro: '시험 점수 너머, 자녀가 물리 세계를 어떻게 이해하는지 살펴봅니다. 지난 한 주 민지가 물리를 탐구한 모습입니다.',
-    overviewEyebrow: '수업 개요',
-    overviewTitle: '이번 주 교실에서는',
-    labs: '실험 3회 완료',
-    overviewBody:
-      '이번 주 물리 시간에는 힘이 균형을 이룰 때 물체가 어떻게 움직이는지 탐구했습니다. 민지는 마찰 없는 에어트랙 실험에 적극적으로 참여했고, 미세한 운동량 변화를 관찰하며 큰 호기심을 보였습니다.',
-    overviewNote:
-      'Vance 선생님은 민지가 일상 속 중력에 대해 깊이 있는 질문을 던졌고, 실험 짝이 초음파 운동 감지기를 보정하는 것을 자발적으로 도왔다고 전했습니다.',
-    labLabel: '실험 활동',
-    labTitle: '마찰 없는 표면과 벡터',
-    strengthEyebrow: '드러난 직관',
-    strengthTitle: '강점과 탄탄한 기초',
-    mastery: '깊은 이해',
-    strengthQuote: '“민지는 정적 평형 상태에서의 뉴턴 제1법칙을 완벽히 이해했습니다.”',
-    strengthBody:
-      '책상 위의 책이나 벽에 걸린 액자처럼 정지한 물체에 작용하는 균형 잡힌 힘을 자신 있게 찾아내고, 알짜힘이 0인 이유를 망설임 없이 그림으로 설명합니다.',
-    strengthA: '정적 자유물체도를 망설임 없이 작성',
-    strengthB: '동료 평가에서 명확한 언어적 설명',
-    focusEyebrow: '부드러운 성장 영역',
+    week: '10월 14일 ~ 18일',
+    eyebrow: '주간 업데이트',
+    updated: '금요일',
+    title: '민지의 이번 주 물리',
+    intro: '민지가 배운 것, 연습 중인 것, 그리고 집에서 도울 수 있는 방법입니다.',
+    overviewEyebrow: '이번 주',
+    overviewTitle: '수업에서',
+    labs: '실험 3회',
+    overviewBody: '힘이 균형을 이룰 때 물체가 어떻게 움직이는지 배웠습니다. 민지는 에어트랙 실험에 적극적으로 참여하고 좋은 질문을 했습니다.',
+    overviewNote: 'Vance 선생님은 민지가 실험 짝의 운동 센서 설치를 도왔다고 전했습니다.',
+    labLabel: '실험',
+    labTitle: '에어트랙 운동',
+    strengthEyebrow: '강점',
+    strengthTitle: '잘 이해하고 있는 것',
+    mastery: '탄탄함',
+    strengthQuote: '“민지는 정지한 물체에 대한 뉴턴 제1법칙을 이해하고 있습니다.”',
+    strengthBody: '책상 위의 책에 작용하는 힘을 그리고, 왜 서로 상쇄되는지 설명할 수 있습니다.',
+    strengthA: '힘 그림을 쉽게 그림',
+    strengthB: '자기 생각을 분명하게 설명함',
+    focusEyebrow: '연습 중',
     focusTitle: '민지가 연습하고 있는 것',
-    stepping: '자연스러운 디딤돌',
+    stepping: '흔한 단계',
     focusBody: (
       <>
-        민지는 <em>이미 움직이고 있는</em> 물체의 힘 그림을 그리는 데 자신감을 키워 가고 있습니다. 가끔은 앞으로 계속
-        움직이려면 계속 밀어 주어야 한다고 느끼기도 합니다.
+        <em>이미 움직이고 있는</em> 물체에 힘이 어떻게 작용하는지 배우는 중입니다. 가끔은 계속 움직이려면 계속 밀어 줘야
+        한다고 생각합니다.
       </>
     ),
-    focusNote:
-      '이는 고등학교 물리에서 가장 흔하고 자연스러운 고비입니다(아리스토텔레스도 같은 생각을 했어요!). 과학적 사고가 건강하게 전환되는 지점입니다.',
-    microTitle: '맞춤형 미니 탐구',
-    microBody: 'Compass가 이번 주 민지가 자기 속도에 맞춰 풀어 볼 수 있는 짧은 인터랙티브 문제 4개를 준비했습니다.',
-    preview: '활동 미리보기',
-    homeEyebrow: '가정 연계',
-    homeTitle: '가정에서 도와주는 방법',
-    talk: '5분 대화',
-    homeIntro: '집에서 시도해 볼 간단한 대화 하나 (과학 지식은 필요 없어요):',
-    prompt: '“매끄러운 얼음 위를 미끄러지는 하키 퍽을 아무도 건드리지 않으면 어떻게 되는지 민지에게 설명해 달라고 해 보세요.”',
-    promptNote:
-      '소리 내어 설명하는 것을 들어 주기만 해도 개념이 정리됩니다. 중간에 멈추거나 생각을 바꾸면 미소 지으며 기다려 주세요. 바로 그때 진짜 이해가 일어납니다!',
-    noPressure: '부담도, 시험도 없이. 저녁 식탁의 호기심이면 충분합니다.',
+    focusNote: '물리에서 학생들이 가장 흔히 갖는 생각 중 하나입니다. 아리스토텔레스도 그렇게 생각했어요.',
+    microTitle: '이번 주 연습',
+    microBody: '자기 속도에 맞춰 풀 수 있는 짧은 문제 4개입니다.',
+    preview: '미리보기',
+    homeEyebrow: '가정에서',
+    homeTitle: '집에서 도와주는 방법',
+    talk: '5분',
+    homeIntro: '저녁 식사 때 이 질문을 해 보세요. 과학 지식은 필요 없어요.',
+    prompt: '“매끄러운 얼음 위를 미끄러지는 하키 퍽을 아무도 건드리지 않으면 어떻게 될까?”',
+    promptNote: '소리 내어 설명하게 해 주세요. 생각하느라 멈추거나 답을 바꾸면 좋은 신호입니다.',
+    noPressure: '시험이 아니라 대화입니다.',
     message: 'Vance 선생님께 메시지 보내기',
-    privacy: 'Compass 업데이트는 가족과 학교만 볼 수 있습니다. 처벌적 채점은 없습니다.',
+    privacy: '이 업데이트는 가족과 학교만 볼 수 있습니다.',
   },
 } satisfies Record<Lang, Record<string, unknown>>
 
@@ -247,7 +238,7 @@ export default function ParentUpdate() {
 
       <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
         {/* This week */}
-        <article className="bg-surface-container-lowest rounded-xl p-6 sm:p-8 shadow-sm transition-all hover:shadow-md">
+        <article className="bg-surface-container-lowest rounded-xl p-6 sm:p-8 border border-[#EED4D7] shadow-xs transition-all hover:shadow-lift">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center shrink-0">
@@ -283,7 +274,7 @@ export default function ParentUpdate() {
         </article>
 
         {/* Strengths */}
-        <article className="bg-surface-container-lowest rounded-xl p-6 sm:p-8 shadow-sm transition-all hover:shadow-md">
+        <article className="bg-surface-container-lowest rounded-xl p-6 sm:p-8 border border-[#EED4D7] shadow-xs transition-all hover:shadow-lift">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#EAF3EB] text-[#4F6D54] flex items-center justify-center shrink-0">
@@ -317,7 +308,7 @@ export default function ParentUpdate() {
         </article>
 
         {/* Working on */}
-        <article className="bg-surface-container-lowest rounded-xl p-6 sm:p-8 shadow-sm transition-all hover:shadow-md">
+        <article className="bg-surface-container-lowest rounded-xl p-6 sm:p-8 border border-[#EED4D7] shadow-xs transition-all hover:shadow-lift">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-secondary-fixed text-tertiary-container flex items-center justify-center shrink-0">
@@ -414,7 +405,7 @@ export default function ParentUpdate() {
         </div>
       </footer>
 
-      <Modal open={previewOpen} onClose={() => setPreviewOpen(false)} eyebrow={t.microTitle} title="This week’s explorations">
+      <Modal open={previewOpen} onClose={() => setPreviewOpen(false)} eyebrow={t.microTitle} title="This week’s practice">
         <ul className="flex flex-col gap-space-sm">
           {PRACTICE.map((p, i) => (
             <li key={p.title} className="flex items-center gap-space-md p-space-md rounded-xl bg-surface-container-low">
@@ -431,7 +422,7 @@ export default function ParentUpdate() {
           ))}
         </ul>
         <p className="mt-space-md font-body-sm text-body-sm text-secondary">
-          Minji can open these from her student portal anytime. There are no scores—only hints and explanations.
+          Minji can open these in her student account. There are no scores, just hints.
         </p>
       </Modal>
 
@@ -465,7 +456,7 @@ export default function ParentUpdate() {
             className="w-full px-4 py-3 rounded-lg bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-tertiary-container focus:ring-2 focus:ring-primary/20"
           />
           <p className="mt-space-xs font-body-sm text-body-sm text-secondary">
-            {lang === 'ko' ? 'Messages are translated for Dr. Vance automatically.' : 'Replies usually arrive within one school day.'}
+            {lang === 'ko' ? 'Your message will be translated for Dr. Vance.' : 'Dr. Vance usually replies within a school day.'}
           </p>
         </form>
       </Modal>

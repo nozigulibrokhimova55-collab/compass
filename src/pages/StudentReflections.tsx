@@ -37,14 +37,14 @@ export default function StudentReflections() {
   return (
     <div className="flex flex-col w-full pb-space-xl max-w-[1360px] mx-auto">
       <PageHeader
-        eyebrow="Diagnostic Workspace / Student Reflections"
-        title="Inquiry threads, in their own words"
-        description="Short written reflections reveal how students are reasoning, not just whether they were right. Leave an encouraging note to keep the conversation going."
+        eyebrow="Reflections"
+        title="What students wrote"
+        description="Short answers in students’ own words. Reply to keep the conversation going."
       />
 
       <div className="grid grid-cols-3 gap-space-md mb-space-xl max-w-2xl">
         {(['misconception', 'review', 'mastery'] as const).map((s) => (
-          <div key={s} className="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm">
+          <div key={s} className="bg-surface-container-lowest rounded-2xl p-space-md border border-[#EED4D7] shadow-xs">
             <StatusBadge status={s} label={s === 'review' ? 'Review' : undefined} />
             <p className="font-headline-lg text-headline-lg text-primary mt-space-xs">{counts[s] ?? 0}</p>
             <p className="font-body-sm text-body-sm text-secondary">this week</p>
@@ -151,14 +151,14 @@ export default function StudentReflections() {
               }}
             >
               <label htmlFor="reflection-note" className="font-label-md text-label-md text-on-surface">
-                Reply with an encouraging note
+                Reply
               </label>
               <textarea
                 id="reflection-note"
                 rows={3}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder="What made you change your mind? Try testing it on the air table tomorrow…"
+                placeholder="What made you change your mind?"
                 className="w-full px-4 py-3 rounded-lg bg-surface-container-lowest border border-outline-variant font-body-md text-body-md focus:outline-none focus:border-tertiary-container focus:ring-2 focus:ring-primary/20"
               />
               <div className="flex justify-end">

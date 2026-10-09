@@ -6,7 +6,7 @@ import { useToast } from '../components/Toast'
 import { APPROVALS, COHORTS, FREE_RESPONSES, type Activity, type Cohort } from '../lib/data'
 import { useSession } from '../lib/session'
 
-const card = 'bg-surface-container-lowest rounded-2xl shadow-sm'
+const card = 'bg-surface-container-lowest rounded-2xl border border-[#EED4D7] shadow-xs'
 
 function greeting() {
   const h = new Date().getHours()
@@ -140,14 +140,13 @@ function DiagnosticHero({ cohort, onReviewPlan }: { cohort: Cohort; onReviewPlan
       <article className={`${card} p-space-xl flex flex-col items-start gap-space-md`}>
         <span className="inline-flex items-center gap-1.5 px-space-sm py-0.5 rounded-full bg-[#EAF3EB] text-[#4F6D54] font-label-sm text-label-sm font-bold uppercase tracking-wider">
           <Icon name="check_circle" className="text-[14px]" filled />
-          No open misconceptions
+          All clear
         </span>
         <h2 className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary max-w-2xl">
           {cohort.shortName} is on solid ground.
         </h2>
         <p className="font-body-md text-body-md text-on-surface-variant max-w-xl">
-          The last diagnostic on <em>{cohort.unit}</em> was reviewed and synced. Create a new quiz when you are ready for
-          the next checkpoint.
+          The last quiz on <em>{cohort.unit}</em> is reviewed. Create a new quiz when you are ready.
         </p>
       </article>
     )
@@ -172,7 +171,7 @@ function DiagnosticHero({ cohort, onReviewPlan }: { cohort: Cohort; onReviewPlan
         </div>
         <div className="flex flex-col gap-space-xs">
           <span className="font-label-sm text-label-sm text-primary uppercase font-bold tracking-widest">
-            Root Misconception Identified
+            Common misconception
           </span>
           <blockquote className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary leading-tight max-w-2xl">
             “{d.misconception}”
@@ -186,7 +185,6 @@ function DiagnosticHero({ cohort, onReviewPlan }: { cohort: Cohort; onReviewPlan
               </span>{' '}
               had this misconception on {d.questions}.
             </p>
-            <span className="font-label-sm text-label-sm text-secondary">{d.bias}</span>
           </div>
           <div
             className="w-full h-3 rounded-full bg-secondary-container overflow-hidden flex"
@@ -223,10 +221,6 @@ function DiagnosticHero({ cohort, onReviewPlan }: { cohort: Cohort; onReviewPlan
               View detailed report
             </Link>
           </div>
-          <span className="font-body-sm text-body-sm text-secondary flex items-center gap-1">
-            <Icon name="psychology" className="text-[16px] text-primary" />
-            Diagnostic Confidence: {d.confidence}
-          </span>
         </div>
       </div>
     </article>
@@ -254,7 +248,7 @@ function CreateQuizModal({ open, onClose, cohort }: { open: boolean; onClose: ()
       open={open}
       onClose={onClose}
       eyebrow={cohort.name}
-      title="Create a diagnostic quiz"
+      title="Create a quiz"
       footer={
         <>
           <button
@@ -316,7 +310,7 @@ function CreateQuizModal({ open, onClose, cohort }: { open: boolean; onClose: ()
         </div>
         <p className="font-body-sm text-body-sm text-secondary flex gap-space-xs">
           <Icon name="info" className="text-[16px] mt-0.5" />
-          Every distractor is mapped to a known misconception, so wrong answers tell you <em>why</em>.
+          Each wrong answer option is linked to a known misconception.
         </p>
       </form>
     </Modal>
@@ -333,7 +327,7 @@ function FreeResponseModal({ open, onClose, onApprove }: { open: boolean; onClos
     <Modal
       open={open}
       onClose={onClose}
-      eyebrow="Free Response AI Diagnostic · Period 3"
+      eyebrow="Written answers · Period 3"
       title="Newton’s 3rd Law responses"
       footer={
         <button
@@ -342,7 +336,7 @@ function FreeResponseModal({ open, onClose, onApprove }: { open: boolean; onClos
           className="bg-primary hover:bg-primary-container text-on-primary px-space-lg py-space-sm rounded-lg font-title-sm text-title-sm inline-flex items-center gap-space-xs"
         >
           <Icon name="verified" className="text-[18px]" />
-          Approve all diagnoses
+          Approve all
         </button>
       }
     >
@@ -358,7 +352,7 @@ function FreeResponseModal({ open, onClose, onApprove }: { open: boolean; onClos
           </li>
         ))}
       </ul>
-      <p className="font-body-sm text-body-sm text-secondary pt-space-sm">+ 3 more responses with consistent diagnoses.</p>
+      <p className="font-body-sm text-body-sm text-secondary pt-space-sm">+ 3 more answers</p>
     </Modal>
   )
 }
@@ -417,17 +411,13 @@ export default function TeacherDashboard() {
       {/* Context header */}
       <section className="flex flex-col lg:flex-row lg:items-end justify-between gap-space-lg mb-space-xl pt-space-lg">
         <div className="flex flex-col gap-space-xs">
-          <div className="flex items-center gap-space-sm text-secondary">
-            <span className="font-label-sm text-label-sm uppercase tracking-wider">Diagnostic Workspace</span>
-            <span aria-hidden="true">/</span>
-            <span className="font-label-sm text-label-sm text-primary font-bold">Fall Term</span>
-          </div>
+          <span className="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Fall term</span>
           <h1 className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary tracking-tight">
             {greeting()}, {honorific}
           </h1>
           <p className="font-body-md text-body-md text-on-surface-variant max-w-xl">
             {cohort.status.tone === 'alert'
-              ? `Diagnostic review flagged an active hurdle in ${cohort.shortName} ahead of tomorrow’s class.`
+              ? `${cohort.shortName} has a misconception to address before tomorrow’s class.`
               : `${cohort.shortName} is on track for ${cohort.next.toLowerCase()}.`}
           </p>
         </div>
@@ -435,7 +425,7 @@ export default function TeacherDashboard() {
           <label className="relative bg-surface-container-low px-space-md py-space-sm rounded-xl shadow-sm flex items-center gap-space-md cursor-pointer">
             <Icon name="layers" className="text-primary text-[20px]" />
             <span className="flex flex-col pr-space-md">
-              <span className="font-label-sm text-label-sm text-secondary uppercase">Active Cohort</span>
+              <span className="font-label-sm text-label-sm text-secondary uppercase">Class</span>
               <select
                 value={cohortId}
                 onChange={(e) => setCohortId(e.target.value)}
@@ -474,13 +464,9 @@ export default function TeacherDashboard() {
             <section ref={planRef} className={`${card} p-space-lg md:p-space-xl flex flex-col gap-space-lg scroll-mt-24`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md pb-space-sm">
                 <div>
-                  <div className="flex items-center gap-space-xs text-secondary font-label-sm text-label-sm uppercase tracking-wider mb-1">
-                    <Icon name="auto_fix_high" className="text-[16px] text-primary" />
-                    <span>Targeted Remediation Sequence</span>
-                  </div>
-                  <h2 className="font-headline-md text-headline-md text-on-surface">Suggested review for next lesson</h2>
+                  <h2 className="font-headline-md text-headline-md text-on-surface">Review plan for the next class</h2>
                   <p className="font-body-sm text-body-sm text-secondary">
-                    {plan.length === 3 ? '15' : '10'}-minute warmup sequence engineered for {cohort.next.toLowerCase()}
+                    {plan.length === 3 ? '15' : '10'} minutes, {cohort.next.toLowerCase()}
                   </p>
                 </div>
                 <button
@@ -514,24 +500,6 @@ export default function TeacherDashboard() {
               </div>
             </section>
           )}
-
-          <div className="bg-surface-container p-space-lg rounded-2xl flex flex-col md:flex-row items-center gap-space-lg">
-            <img
-              src="/images/students-air-table.jpg"
-              alt="High school students gathered around an air puck table observing motion"
-              className="w-full md:w-44 h-32 rounded-xl object-cover shrink-0 shadow-inner"
-            />
-            <div className="flex flex-col gap-space-xs">
-              <span className="font-label-sm text-label-sm uppercase text-secondary font-bold">Research Backing</span>
-              <h3 className="font-headline-sm text-headline-sm text-primary">
-                Inquiry-based labs resolve misconceptions 3x faster than rote drilling.
-              </h3>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">
-                Hands-on experiments help students replace the intuition that force always follows motion within a single
-                class session.
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Right column: approvals & classes */}
@@ -540,15 +508,12 @@ export default function TeacherDashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-space-sm">
                 <Icon name="pending_actions" className="text-primary text-[22px]" />
-                <h2 className="font-headline-sm text-headline-sm text-on-surface">Waiting for approval</h2>
+                <h2 className="font-headline-sm text-headline-sm text-on-surface">Needs approval</h2>
               </div>
               <span className="min-w-6 h-6 px-1.5 rounded-full bg-primary-fixed text-primary font-label-sm text-label-sm font-bold flex items-center justify-center">
                 {pending.length}
               </span>
             </div>
-            <p className="font-body-sm text-body-sm text-secondary -mt-space-sm">
-              Teacher sign-off confirms diagnostic clarity before student and family delivery.
-            </p>
             <div className="flex flex-col gap-space-md">
               {pending.length === 0 && (
                 <div className="p-space-lg rounded-xl bg-surface-container-low text-center flex flex-col items-center gap-space-xs">
@@ -640,8 +605,7 @@ export default function TeacherDashboard() {
             >
               <span className="absolute inset-0 bg-primary/40 backdrop-blur-[2px] flex items-center justify-between p-space-md text-on-primary">
                 <span className="flex flex-col">
-                  <span className="font-label-sm text-label-sm uppercase tracking-wider text-primary-fixed">Faculty Lounge</span>
-                  <span className="font-headline-sm text-headline-sm">Curriculum Map Ready</span>
+                  <span className="font-headline-sm text-headline-sm">Curriculum map</span>
                 </span>
                 <Icon name="chevron_right" className="text-[24px] transition-transform group-hover:translate-x-1" />
               </span>

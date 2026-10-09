@@ -1,27 +1,25 @@
 # Compass
 
-Compass is a diagnostic learning platform for high school science. It is built from the Stitch "Warm Editorial Pedagogy" design export.
+A web app for high school science classes. It finds the misunderstanding behind wrong quiz answers and shows teachers, students, and parents what to do next.
 
-**Stack:** Vite, React 19, TypeScript, Tailwind CSS 3 and React Router.
+Built with Vite, React, TypeScript, Tailwind CSS, and React Router.
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
+npm run dev
 npm run build
 ```
 
-## Routes
+## Features
 
-| Path | Screen |
-| --- | --- |
-| `/` | Marketing landing page, with an EN / 한국어 hero toggle |
-| `/login`, `/signup` | Log in and role-based sign up (teacher / student / parent) |
-| `/app` | Educator Cockpit (teacher dashboard) |
-| `/app/radar` | Misconception Radar (the header search lands here) |
-| `/app/reflections` | Student Reflections |
-| `/app/family` | Parent weekly update, with an EN / 한국어 toggle |
-| `/app/curriculum` | Curriculum Map |
+- **Landing page** (`/`): what Compass does, with an English/Korean switch.
+- **Log in and sign up** (`/login`, `/signup`): sign up as a teacher, student, or parent. Each role asks for different details.
+- **Dashboard** (`/app`): the main misconception for each class, a review plan you can edit and approve, and a list of items waiting for approval.
+- **Misconception Radar** (`/app/radar`): common wrong ideas by class, with search and a suggested fix for each.
+- **Reflections** (`/app/reflections`): students' written answers. Teachers can reply.
+- **Family updates** (`/app/family`): a weekly note for parents in English or Korean, with a question to ask at home.
+- **Curriculum Map** (`/app/curriculum`): progress by unit and topic.
 
-This is a front-end demo. All data is sample data in `src/lib/data.ts`. Signing in only stores a local session. If nobody is signed in, the workspace falls back to the sample educator, so every screen can still be viewed.
+## Notes
 
-Design tokens such as colors, type scale, spacing and elevation are in `tailwind.config.js`.
+This is a front-end demo. Sample data is in `src/lib/data.ts`, and signing in only saves a session in the browser. Colors, fonts, and spacing are set in `tailwind.config.js`.

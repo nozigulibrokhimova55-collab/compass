@@ -20,7 +20,7 @@ function MisconceptionCard({ m }: { m: Misconception }) {
   const trend = TREND[m.trend]
 
   return (
-    <article className="bg-surface-container-lowest rounded-3xl border border-[#EED4D7] shadow-[0_4px_20px_-2px_rgba(102,18,20,0.04),0_2px_6px_-1px_rgba(102,18,20,0.02)] hover:shadow-[0_12px_32px_-4px_rgba(102,18,20,0.08),0_4px_12px_-2px_rgba(102,18,20,0.04)] transition-shadow overflow-hidden">
+    <article className="bg-surface-container-lowest rounded-2xl border border-[#EED4D7] shadow-[0_4px_20px_-2px_rgba(102,18,20,0.04),0_2px_6px_-1px_rgba(102,18,20,0.02)] hover:shadow-[0_12px_32px_-4px_rgba(102,18,20,0.08),0_4px_12px_-2px_rgba(102,18,20,0.04)] transition-shadow overflow-hidden">
       <div className="p-space-lg flex flex-col gap-space-md">
         <div className="flex flex-wrap items-center justify-between gap-space-sm">
           <span className="font-label-sm text-label-sm uppercase tracking-wider text-secondary">
@@ -63,7 +63,7 @@ function MisconceptionCard({ m }: { m: Misconception }) {
       >
         <span className="flex items-center gap-space-xs">
           <Icon name="psychology" className="text-[16px]" />
-          The “Why” drawer
+          Details
         </span>
         <Icon name="expand_more" className={`text-[18px] transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -71,11 +71,11 @@ function MisconceptionCard({ m }: { m: Misconception }) {
         <div className="animate-fade-up bg-[#FFF7F8] px-space-lg py-space-md flex flex-col gap-space-md">
           <div className="grid sm:grid-cols-2 gap-space-md">
             <div>
-              <span className="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Observed path</span>
+              <span className="font-label-sm text-label-sm uppercase tracking-wider text-secondary">What students did</span>
               <p className="font-body-sm text-body-sm text-on-surface mt-1">{m.observed}</p>
             </div>
             <div>
-              <span className="font-label-sm text-label-sm uppercase tracking-wider text-[#A4502C]">Underlying mental-model flaw</span>
+              <span className="font-label-sm text-label-sm uppercase tracking-wider text-[#A4502C]">Why it happens</span>
               <p className="font-body-sm text-body-sm text-on-surface mt-1">{m.flaw}</p>
             </div>
           </div>
@@ -122,13 +122,9 @@ export default function MisconceptionRadar() {
   return (
     <div className="flex flex-col w-full pb-space-xl max-w-[1360px] mx-auto">
       <PageHeader
-        eyebrow="Diagnostic Workspace / Misconception Radar"
-        title={
-          <>
-            What your classes are <em className="font-normal">really</em> thinking
-          </>
-        }
-        description="Every wrong answer is mapped to the mental model behind it. Open a card’s “Why” drawer to see the observed path and a suggested remediation."
+        eyebrow="Misconception Radar"
+        title="Misconceptions by class"
+        description="Common wrong ideas in your classes, who has them, and a suggested fix."
       />
 
       <div className="flex flex-col md:flex-row md:items-center gap-space-md mb-space-lg">

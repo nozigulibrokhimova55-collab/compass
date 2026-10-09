@@ -6,17 +6,17 @@ import { ROLE_LABEL } from '../lib/roles'
 import { useSession } from '../lib/session'
 
 const NAV = [
-  { to: '/app', end: true, icon: 'analytics', label: 'Educator Cockpit' },
+  { to: '/app', end: true, icon: 'analytics', label: 'Dashboard' },
   { to: '/app/radar', icon: 'psychology_alt', label: 'Misconception Radar' },
-  { to: '/app/reflections', icon: 'auto_stories', label: 'Student Reflections' },
-  { to: '/app/family', icon: 'family_restroom', label: 'Parent Narrative Portal' },
+  { to: '/app/reflections', icon: 'auto_stories', label: 'Reflections' },
+  { to: '/app/family', icon: 'family_restroom', label: 'Family updates' },
   { to: '/app/curriculum', icon: 'menu_book', label: 'Curriculum Map' },
 ]
 
 const NOTIFICATIONS = [
-  { icon: 'warning', text: 'Period 3: 21 of 28 students share the impetus misconception.', time: '12m ago' },
-  { icon: 'rate_review', text: 'Marcus Reid’s free response was flagged as an edge case.', time: '1h ago' },
-  { icon: 'family_restroom', text: 'Weekly family notes for Period 3 are ready to review.', time: 'Today' },
+  { icon: 'warning', text: 'Period 3: 21 of 28 students share the same misconception.', time: '12m ago' },
+  { icon: 'rate_review', text: 'Marcus Reid’s answer was flagged for review.', time: '1h ago' },
+  { icon: 'family_restroom', text: 'Weekly family notes for Period 3 are ready.', time: 'Today' },
 ]
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
@@ -29,9 +29,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <div className="px-space-sm">
           <Logo to="/" />
         </div>
-        <p className="px-space-sm font-label-sm text-label-sm uppercase tracking-wider text-secondary">
-          Academic Diagnostics
-        </p>
         <nav aria-label="Workspace" className="flex flex-col gap-space-xs">
           {NAV.map((item) => (
             <NavLink
@@ -116,7 +113,7 @@ function Notifications() {
       {open && (
         <div className="animate-fade-up absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl bg-surface-container-lowest p-space-sm shadow-[0_24px_48px_-8px_rgba(59,10,12,0.16)] z-50">
           <p className="px-space-sm py-space-xs font-label-sm text-label-sm uppercase tracking-wider text-secondary">
-            Recent signals
+            Notifications
           </p>
           <ul>
             {NOTIFICATIONS.map((n) => (
@@ -161,7 +158,7 @@ export function AppShell() {
   return (
     <div className="min-h-screen bg-background">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:block fixed left-0 top-0 h-full w-72 bg-surface-container-low shadow-[0_1px_12px_rgba(102,18,20,0.04)] z-50">
+      <aside className="hidden lg:block fixed left-0 top-0 h-full w-72 bg-surface border-r border-[#EED4D7] z-50">
         <SidebarContent />
       </aside>
 
@@ -199,11 +196,11 @@ export function AppShell() {
             <form role="search" onSubmit={onSearch} className="relative hidden md:block w-72">
               <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline" />
               <input
-                aria-label="Search inquiry records and students"
+                aria-label="Search students or topics"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="w-full bg-surface-container-lowest text-on-surface pl-10 pr-4 py-1.5 rounded-lg text-body-sm font-body-sm border border-outline-variant focus:outline-none focus:border-tertiary-container focus:ring-2 focus:ring-primary/20"
-                placeholder="Search inquiry records, students..."
+                placeholder="Search students or topics"
                 type="search"
               />
             </form>
