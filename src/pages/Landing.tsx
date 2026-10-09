@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { Logo } from '../components/Logo'
+import { Reveal } from '../components/Reveal'
 import { useToast } from '../components/Toast'
 
 type Lang = 'en' | 'ko'
@@ -162,7 +163,7 @@ export default function Landing() {
 
           {/* Preview: one misconception, three views */}
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-space-md items-stretch">
-            <div className={`${card} p-space-lg flex flex-col justify-between gap-space-md`}>
+            <Reveal delay={0} className={`${card} p-space-lg flex flex-col justify-between gap-space-md`}>
               <div>
                 <span className="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Teacher view</span>
                 <h3 className="font-headline-sm text-headline-sm text-primary mt-1">AP Physics 1, Period 3</h3>
@@ -192,9 +193,9 @@ export default function Landing() {
                 <Icon name={pushed ? 'check_circle' : 'send'} className="text-[16px]" />
                 {pushed ? 'Added to tomorrow' : 'Approve for tomorrow'}
               </button>
-            </div>
+            </Reveal>
 
-            <div className={`${card} p-space-lg flex flex-col justify-between gap-space-md`}>
+            <Reveal delay={120} className={`${card} p-space-lg flex flex-col justify-between gap-space-md`}>
               <div>
                 <span className="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Student view</span>
                 <h3 className="font-headline-sm text-headline-sm text-primary mt-1">Quick check, no grade</h3>
@@ -215,9 +216,9 @@ export default function Landing() {
               <p className="font-body-sm text-body-sm text-on-secondary-container p-space-sm rounded-lg bg-secondary-container/50">
                 Minji got it right this time, so the flag is cleared.
               </p>
-            </div>
+            </Reveal>
 
-            <div className={`${card} p-space-lg flex flex-col justify-between gap-space-md`}>
+            <Reveal delay={240} className={`${card} p-space-lg flex flex-col justify-between gap-space-md`}>
               <div>
                 <span className="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Parent view</span>
                 <h3 className="font-headline-sm text-headline-sm text-primary mt-1">Friday note for Minji’s family</h3>
@@ -229,23 +230,23 @@ export default function Landing() {
                 <Icon name="translate" className="text-[16px]" />
                 Sent in the family’s language
               </span>
-            </div>
+            </Reveal>
           </div>
         </section>
 
         {/* Score vs Compass */}
         <section className="w-full bg-surface-container-low py-space-xl">
           <div className={container}>
-            <div className="text-center max-w-2xl mx-auto mb-space-xl">
+            <Reveal className="text-center max-w-2xl mx-auto mb-space-xl">
               <h2 className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-space-sm">
                 A score doesn’t tell the whole story.
               </h2>
               <p className="font-body-lg text-body-lg text-on-surface-variant">
                 Two students can both get 64% for completely different reasons.
               </p>
-            </div>
+            </Reveal>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-space-lg items-stretch">
-              <div className="bg-surface-container-highest rounded-2xl p-space-lg md:p-space-xl">
+              <Reveal className="bg-surface-container-highest rounded-2xl p-space-lg md:p-space-xl">
                 <span className="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Usual gradebook</span>
                 <div className="flex items-baseline gap-space-sm my-space-sm">
                   <span className="font-display-lg text-display-lg-mobile md:text-display-lg text-error">62%</span>
@@ -266,8 +267,8 @@ export default function Landing() {
                   </li>
                 </ul>
                 <p className="mt-space-md font-body-sm text-body-sm text-secondary">Shows what was wrong. Not why.</p>
-              </div>
-              <div className={`${card} p-space-lg md:p-space-xl`}>
+              </Reveal>
+              <Reveal delay={120} className={`${card} p-space-lg md:p-space-xl`}>
                 <span className="font-label-sm text-label-sm uppercase tracking-wider text-primary">Compass</span>
                 <h3 className="font-headline-md text-headline-md text-primary my-space-sm">The gap is vectors, not algebra</h3>
                 <p className="font-body-md text-body-md text-on-surface-variant mb-space-md">
@@ -293,24 +294,24 @@ export default function Landing() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Reveal>
             </div>
           </div>
         </section>
 
         {/* How it works */}
         <section id="how-it-works" className={`${container} py-space-xl scroll-mt-16`}>
-          <h2 className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-space-lg">How it works</h2>
+          <Reveal as="h2" className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-space-lg">How it works</Reveal>
           <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-space-md">
             {STEPS.map((s, i) => (
-              <li key={s.title} className={`${card} p-space-lg`}>
+              <Reveal as="li" key={s.title} delay={(i % 3) * 100} className={`${card} p-space-lg`}>
                 <div className="flex items-center justify-between mb-space-sm">
                   <span className="font-headline-md text-headline-md text-primary-container">{String(i + 1).padStart(2, '0')}</span>
                   <Icon name={s.icon} className="text-primary text-[22px]" />
                 </div>
                 <h3 className="font-title-md text-title-md text-on-surface mb-1">{s.title}</h3>
                 <p className="font-body-md text-body-md text-on-surface-variant">{s.text}</p>
-              </li>
+              </Reveal>
             ))}
           </ol>
         </section>
@@ -318,12 +319,12 @@ export default function Landing() {
         {/* Audiences */}
         <section id="audiences" className="w-full bg-surface-container-low py-space-xl scroll-mt-16">
           <div className={container}>
-            <h2 className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-space-lg">
+            <Reveal as="h2" className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-space-lg">
               One misconception, three views
-            </h2>
+            </Reveal>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-space-lg">
-              {AUDIENCES.map((a) => (
-                <div key={a.title} className={`${card} p-space-lg`}>
+              {AUDIENCES.map((a, i) => (
+                <Reveal key={a.title} delay={i * 120} className={`${card} p-space-lg`}>
                   <div className="flex items-center gap-space-sm mb-space-md">
                     <span className="w-10 h-10 rounded-full bg-secondary-container text-primary flex items-center justify-center">
                       <Icon name={a.icon} className="text-[22px]" />
@@ -338,7 +339,7 @@ export default function Landing() {
                       </li>
                     ))}
                   </ul>
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -346,21 +347,21 @@ export default function Landing() {
 
         {/* Principles */}
         <section id="principles" className={`${container} py-space-xl scroll-mt-16`}>
-          <h2 className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-space-lg">Principles</h2>
+          <Reveal as="h2" className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-space-lg">Principles</Reveal>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
-            {PRINCIPLES.map((p) => (
-              <div key={p.title} className={`${card} p-space-lg`}>
+            {PRINCIPLES.map((p, i) => (
+              <Reveal key={p.title} delay={i * 100} className={`${card} p-space-lg`}>
                 <Icon name={p.icon} className="text-primary text-[22px] mb-space-sm" />
                 <h3 className="font-title-md text-title-md text-on-surface mb-1">{p.title}</h3>
                 <p className="font-body-md text-body-md text-on-surface-variant">{p.text}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </section>
 
         {/* CTA */}
         <section className={`${container} pb-space-xl`}>
-          <div className="bg-primary-container rounded-3xl p-space-lg md:p-space-xl text-center text-on-primary relative overflow-hidden">
+          <Reveal className="bg-primary-container rounded-3xl p-space-lg md:p-space-xl text-center text-on-primary relative overflow-hidden">
             <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-tertiary-container/30 blur-3xl pointer-events-none" />
             <div className="relative z-10 max-w-xl mx-auto">
               <h2 className="font-display-lg text-display-lg-mobile md:text-display-lg mb-space-sm">Try it with your next quiz.</h2>
@@ -383,7 +384,7 @@ export default function Landing() {
                 </Link>
               </div>
             </div>
-          </div>
+          </Reveal>
         </section>
       </main>
 
