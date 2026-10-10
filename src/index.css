@@ -63,3 +63,208 @@
     transform: none;
   }
 }
+
+/* ================= Sky canvas (landing page, see CLAUDE.md) ================= */
+
+/* Fixed sky behind everything: blue at the top fading to pale blue at the bottom. */
+.sky-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  pointer-events: none;
+  background: linear-gradient(180deg, #5b9be0 0%, #8dbdeb 55%, #c3dcf3 100%);
+}
+
+/* Soft clouds built from overlapping radial gradients (no blur filter, so they stay cheap). */
+.cloud {
+  position: absolute;
+  left: 0;
+  width: var(--w, 360px);
+  aspect-ratio: 2.4 / 1;
+  opacity: var(--o, 0.9);
+  background:
+    radial-gradient(closest-side, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.55) 60%, rgba(255, 255, 255, 0)) 18% 68% / 42% 72% no-repeat,
+    radial-gradient(closest-side, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.6) 60%, rgba(255, 255, 255, 0)) 46% 34% / 48% 86% no-repeat,
+    radial-gradient(closest-side, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.5) 60%, rgba(255, 255, 255, 0)) 76% 58% / 40% 70% no-repeat,
+    radial-gradient(closest-side, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0)) 50% 82% / 96% 46% no-repeat;
+  transform: translateX(var(--x, 0));
+  animation: cloud-drift var(--dur, 200s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+@keyframes cloud-drift {
+  from {
+    transform: translateX(-40vw);
+  }
+  to {
+    transform: translateX(120vw);
+  }
+}
+
+/* ---------- Selection frames ---------- */
+.sel-frame {
+  position: relative;
+}
+.sel-edge {
+  position: absolute;
+  pointer-events: none;
+  border-color: #3b8bea;
+  border-style: solid;
+  border-width: 0;
+  transition: transform 260ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+.sel-edge.top {
+  top: 0;
+  left: 0;
+  right: 0;
+  border-top-width: 1.5px;
+  transform-origin: left;
+}
+.sel-edge.right {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  border-right-width: 1.5px;
+  transform-origin: top;
+  transition-delay: 200ms;
+}
+.sel-edge.bottom {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-bottom-width: 1.5px;
+  transform-origin: right;
+  transition-delay: 400ms;
+}
+.sel-edge.left {
+  top: 0;
+  left: 0;
+  bottom: 0;
+  border-left-width: 1.5px;
+  transform-origin: bottom;
+  transition-delay: 600ms;
+}
+.sel-frame.is-dashed .sel-edge {
+  border-style: dashed;
+}
+.sel-handle {
+  position: absolute;
+  z-index: 2;
+  width: 9px;
+  height: 9px;
+  background: #fff;
+  border: 1.5px solid #3b8bea;
+  pointer-events: none;
+  transition:
+    transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1) 750ms,
+    opacity 160ms ease 750ms;
+}
+.sel-tab {
+  transition:
+    opacity 200ms ease,
+    transform 300ms cubic-bezier(0.2, 0, 0, 1);
+}
+/* Undrawn state (only while JS is waiting for the frame to scroll into view). */
+.sel-frame.is-waiting .sel-edge.top,
+.sel-frame.is-waiting .sel-edge.bottom {
+  transform: scaleX(0);
+}
+.sel-frame.is-waiting .sel-edge.left,
+.sel-frame.is-waiting .sel-edge.right {
+  transform: scaleY(0);
+}
+.sel-frame.is-waiting .sel-handle {
+  opacity: 0;
+  transform: scale(0);
+}
+.sel-frame.is-waiting .sel-tab {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+/* "scroll ↓" hint under the hero: a slow bob. */
+.scroll-hint {
+  animation: scroll-bob 2.4s ease-in-out infinite;
+}
+@keyframes scroll-bob {
+  0%,
+  100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, 6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloud,
+  .scroll-hint {
+    animation: none;
+  }
+}
+
+/* Button hovers (from the reference video). */
+
+/* Rolling label: the text slides up and a copy comes in from below. */
+.roll {
+  position: relative;
+  display: inline-flex;
+  overflow: hidden;
+  vertical-align: top;
+}
+.roll > span {
+  display: block;
+  transition: transform 0.38s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.roll > span + span {
+  position: absolute;
+  inset: 100% 0 auto 0;
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .roll-host:hover .roll > span {
+    transform: translateY(-100%);
+  }
+}
+
+/* Circle fill: grows from where the mouse enters (positions set by fillHover). */
+.fill-host {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+.fill-host::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: var(--fx, 50%);
+  top: var(--fy, 50%);
+  width: var(--fd, 0);
+  height: var(--fd, 0);
+  border-radius: 9999px;
+  background: var(--fill);
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.fill-host.is-filled::before {
+  transform: translate(-50%, -50%) scale(1);
+}
+.fill-host.is-filled {
+  color: var(--fill-text, #fff);
+  border-color: var(--fill);
+}
+
+/* Lenis smooth scrolling */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+/* Kinetic headline letters fade between navy and orange instead of snapping. */
+.k-char {
+  transition: color 0.25s ease-out;
+}

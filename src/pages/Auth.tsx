@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { ROLE_HOME, type Role } from '../lib/roles'
 import { useSession } from '../lib/session'
@@ -268,7 +268,9 @@ function LoginPanel({ dimmed, onSignup }: { dimmed: boolean; onSignup: () => voi
 function SignupPanel({ dimmed }: { dimmed: boolean }) {
   const { signIn } = useSession()
   const navigate = useNavigate()
-  const [role, setRole] = useState<Role>('parent')
+  const [params] = useSearchParams()
+  // `/signup?role=teacher` comes from the role cards on the landing and /get-started pages.
+  const [role, setRole] = useState<Role>(() => ROLES.find((r) => r.id === params.get('role'))?.id ?? 'parent')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -587,7 +589,7 @@ export default function Auth() {
         <header className="relative z-10 flex flex-col items-center text-center mb-8 md:mb-12">
           <Link to="/" className="flex items-center justify-center gap-3.5 mb-3">
             <span className="w-12 h-12 rounded-xl bg-surface-container-lowest p-2 shadow-md flex items-center justify-center">
-              <img alt="" className="w-9 h-9 object-contain" src="/images/logo.png" />
+              <img alt="" className="w-9 h-9 object-contain" src="/images/logo.svg" />
             </span>
             <span className="font-headline-lg text-headline-lg text-primary tracking-tight font-semibold">Compass</span>
           </Link>

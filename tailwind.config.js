@@ -1,13 +1,31 @@
 /** @type {import('tailwindcss').Config} */
-// Tokens from the "Warm Editorial Pedagogy" design system (Stitch export).
+// Landing page: "sky canvas" tokens (see CLAUDE.md).
+// App pages: tokens from the "Warm Editorial Pedagogy" design system (Stitch export).
 const sans = ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif']
 const serif = ['Newsreader', 'ui-serif', 'Georgia', 'serif']
+const kr = ['"Pretendard Variable"', 'Pretendard']
+const grotesk = ['"Inter Tight"', ...kr, 'ui-sans-serif', 'system-ui', 'sans-serif']
+const inter = ['Inter', ...kr, 'ui-sans-serif', 'system-ui', 'sans-serif']
+const mono = ['"JetBrains Mono"', ...kr, 'ui-monospace', 'SFMono-Regular', 'monospace']
+const hand = ['Caveat', ...kr, 'cursive']
 
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
+        // Sky canvas (landing page)
+        sky: { top: '#5B9BE0', bottom: '#C3DCF3' },
+        accent: '#E8572A',
+        // Slightly deeper orange for small text and button labels (white on it is 4.9:1).
+        'accent-strong': '#C9441A',
+        navy: '#161B26',
+        // Secondary text on white or translucent white only (7.8:1 on white; too faint on the sky).
+        'navy-soft': '#4A5263',
+        'card-line': '#D6E6F7',
+        select: '#3B8BEA',
+        live: '#3DBE6B',
+        note: '#F7E7CF',
         'secondary-fixed': '#f6dcdf',
         'inverse-primary': '#ffb3ae',
         outline: '#89716f',
@@ -77,6 +95,10 @@ export default {
       fontFamily: {
         sans,
         serif,
+        grotesk,
+        inter,
+        mono,
+        hand,
         'display-lg': serif,
         'display-lg-mobile': serif,
         'headline-lg': serif,
@@ -111,6 +133,8 @@ export default {
         xs: '0 4px 20px -2px rgba(102, 18, 20, 0.04), 0 2px 6px -1px rgba(102, 18, 20, 0.02)',
         lift: '0 12px 32px -4px rgba(102, 18, 20, 0.08), 0 4px 12px -2px rgba(102, 18, 20, 0.04)',
         overlay: '0 24px 48px -8px rgba(59, 10, 12, 0.16)',
+        card: '0 1px 2px rgba(22, 27, 38, 0.04), 0 14px 36px -14px rgba(30, 72, 130, 0.22)',
+        float: '0 8px 24px -8px rgba(22, 27, 38, 0.18)',
       },
       keyframes: {
         'fade-up': {

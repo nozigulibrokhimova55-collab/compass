@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from './components/AppShell'
 import Auth from './pages/Auth'
+import GetStarted from './pages/GetStarted'
 import Landing from './pages/Landing'
 import TeacherDashboard from './pages/TeacherDashboard'
 
@@ -19,6 +20,7 @@ export default function App() {
     <Suspense fallback={<PageFallback />}>
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/get-started" element={<GetStarted />} />
         <Route path="/login" element={<Auth />} />
         <Route path="/signup" element={<Auth />} />
         <Route path="/app" element={<AppShell />}>
