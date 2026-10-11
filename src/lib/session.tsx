@@ -17,9 +17,11 @@ type SessionContextValue = {
 
 const STORAGE_KEY = 'compass.session'
 
-const DEMO_SESSION: Session = {
-  name: 'Dr. Eleanor Vance',
-  email: 'e.vance@lyceum.edu',
+/** The demo teacher from the sample class (see sample.ts). */
+// oxlint-disable-next-line react/only-export-components
+export const DEMO_SESSION: Session = {
+  name: 'Ms. Park',
+  email: 'ms.park@school.example',
   role: 'teacher',
 }
 

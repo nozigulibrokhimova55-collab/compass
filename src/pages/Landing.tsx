@@ -6,7 +6,7 @@ import { Chars, Kinetic } from '../components/ui/Kinetic'
 import { RolePicker } from '../components/landing/RolePicker'
 import { SiteFooter } from '../components/ui/SiteFooter'
 import { SiteHeader } from '../components/ui/SiteHeader'
-import { fillHover } from '../components/ui/hover'
+import { fillHover } from '../components/ui/fillHover'
 import { SkyBackground } from '../components/ui/SkyBackground'
 import { scrollToId, startSmoothScroll } from '../lib/smoothScroll'
 

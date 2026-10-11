@@ -19,6 +19,8 @@ type StatCardProps = {
 /** Dark navy card with big white numbers, orange symbols and mono labels. Use real values from sample data only. */
 export function StatCard({ stats, title, note, className = '' }: StatCardProps) {
   const { ref, seen } = useInView<HTMLElement>()
+  // Three numbers get a smaller size so they never run into each other.
+  const three = stats.length > 2
   return (
     <section
       ref={ref}
@@ -27,11 +29,11 @@ export function StatCard({ stats, title, note, className = '' }: StatCardProps) 
       style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px)', backgroundSize: '18px 18px' }}
     >
       {title && <h3 className="font-mono text-[12px] font-medium uppercase tracking-[0.16em] text-accent-soft">{title}</h3>}
-      <dl className={`grid gap-6 ${title ? 'mt-5' : ''} ${stats.length > 2 ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'}`}>
+      <dl className={`grid ${title ? 'mt-5' : ''} ${three ? 'grid-cols-3 gap-4' : 'grid-cols-2 gap-6'}`}>
         {stats.map((s) => (
           <div key={s.label} className="flex flex-col-reverse">
             <dt className="mt-2 font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-white/80">{s.label}</dt>
-            <dd className="font-grotesk text-[48px] font-black leading-none tracking-[-0.04em] md:text-[60px]">
+            <dd className={`font-grotesk font-black leading-none tracking-[-0.04em] ${three ? 'text-[38px] sm:text-[46px]' : 'text-[48px] md:text-[60px]'}`}>
               {s.value}
               {s.symbol && <span className="text-accent">{s.symbol}</span>}
             </dd>

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Icon } from '../components/Icon'
-import { RoleCards, ROLE_OPTIONS } from '../components/landing/RolePicker'
+import { RoleCards } from '../components/landing/RolePicker'
+import { ROLE_OPTIONS } from '../components/landing/roleOptions'
 import { Button } from '../components/ui/Button'
 import { Field, inputClass, PasswordInput, TextInput } from '../components/ui/Field'
 import { Frame } from '../components/ui/Frame'
@@ -9,7 +10,7 @@ import { PageShell } from '../components/ui/PageShell'
 import { SectionHeader } from '../components/ui/SectionHeader'
 import { ROLE_HOME, type Role } from '../lib/roles'
 import { useSession } from '../lib/session'
-import { isEmail } from './Login'
+import { isEmail } from '../lib/validate'
 
 const LANGUAGES = ['English', '한국어 (Korean)', 'Español (Spanish)', '中文 (Chinese)', 'Tiếng Việt (Vietnamese)']
 

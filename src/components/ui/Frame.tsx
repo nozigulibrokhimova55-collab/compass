@@ -38,14 +38,16 @@ export function Frame({
   bodyClassName = 'p-6 md:p-7',
 }: FrameProps) {
   const { ref, seen } = useInView<HTMLElement>()
-  const [intro, setIntro] = useState(false)
+  const reduced = prefersReducedMotion()
+  const [introDone, setIntroDone] = useState(false)
 
   useEffect(() => {
-    if (!seen || prefersReducedMotion()) return
-    setIntro(true)
-    const t = window.setTimeout(() => setIntro(false), 1500)
+    if (!seen || reduced) return
+    const t = window.setTimeout(() => setIntroDone(true), 1500)
     return () => window.clearTimeout(t)
-  }, [seen])
+  }, [seen, reduced])
+  // The outline shows for a moment after the frame first scrolls into view.
+  const intro = seen && !reduced && !introDone
 
   const navy = tone === 'navy'
   const tabColors = navy ? 'bg-navy text-white' : 'bg-white text-navy-soft'

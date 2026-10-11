@@ -1,7 +1,7 @@
 import type { MouseEvent, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '../Icon'
-import { fillHover } from './hover'
+import { fillHover } from './fillHover'
 
 export type ButtonVariant = 'orange' | 'navy' | 'outline' | 'soft'
 

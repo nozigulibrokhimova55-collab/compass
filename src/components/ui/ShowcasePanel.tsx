@@ -20,14 +20,15 @@ type ShowcasePanelProps = {
 /** White panel with a thin orange selection outline, a number badge, a two-tone title, short text and a mockup on the right. */
 export function ShowcasePanel({ number, title, highlight, text, children, actions, as: Heading = 'h3', className = '' }: ShowcasePanelProps) {
   const { ref, seen } = useInView<HTMLElement>()
-  const [drawn, setDrawn] = useState(false)
+  const reduced = prefersReducedMotion()
+  const [timerDone, setTimerDone] = useState(false)
 
   useEffect(() => {
-    if (!seen) return
-    if (prefersReducedMotion()) return setDrawn(true)
-    const t = window.setTimeout(() => setDrawn(true), 150)
+    if (!seen || reduced) return
+    const t = window.setTimeout(() => setTimerDone(true), 150)
     return () => window.clearTimeout(t)
-  }, [seen])
+  }, [seen, reduced])
+  const drawn = seen && (reduced || timerDone)
 
   return (
     <article ref={ref} className={`reveal ${seen ? 'is-visible' : ''} ${className}`}>

@@ -12,9 +12,15 @@ type SectionHeaderProps = {
   as?: 'h1' | 'h2'
   id?: string
   align?: 'center' | 'left'
-  /** `md` for page tops where a form follows (log in, sign up). */
-  size?: 'lg' | 'md'
+  /** `md` for page tops where a form follows (log in, sign up); `sm` for pages inside the app areas. */
+  size?: 'lg' | 'md' | 'sm'
   className?: string
+}
+
+const SIZES = {
+  lg: 'text-[44px] sm:text-[64px] lg:text-[96px]',
+  md: 'text-[44px] sm:text-[56px] lg:text-[72px]',
+  sm: 'text-[36px] sm:text-[48px] lg:text-[56px]',
 }
 
 /** Orange script line, a huge uppercase headline that reacts to the mouse, and a rotated sticky note. */
@@ -22,14 +28,14 @@ export function SectionHeader({ script, title, note, as = 'h2', id, align = 'cen
   const center = align === 'center'
   return (
     <header className={`flex flex-col ${center ? 'items-center text-center' : 'items-start text-left'} ${className}`}>
-      <p className="-rotate-2 rounded-full bg-white/85 px-4 py-0.5 font-hand text-[26px] font-bold leading-9 text-accent-strong backdrop-blur-sm md:text-[30px]">
+      <p className="w-fit -rotate-2 rounded-full bg-white/85 px-4 py-0.5 font-hand text-[26px] font-bold leading-9 text-accent-strong backdrop-blur-sm md:text-[30px]">
         {script}
       </p>
       <Kinetic
         as={as}
         id={id}
         label={title}
-        className={`mt-4 font-grotesk font-black uppercase leading-[0.92] tracking-[-0.045em] text-navy ${size === 'md' ? 'text-[44px] sm:text-[56px] lg:text-[72px]' : 'text-[44px] sm:text-[64px] lg:text-[96px]'}`}
+        className={`mt-4 font-grotesk font-black uppercase leading-[0.92] tracking-[-0.045em] text-navy ${SIZES[size]}`}
       >
         <Chars text={title} />
       </Kinetic>

@@ -4,7 +4,7 @@ Front-end demo (Vite, React, TypeScript, Tailwind 3, React Router) for high scho
 
 ## Design system: "Sky canvas" (whole site)
 
-Visual reference: ohhmydesign.com (match the look, never copy its text, images or code). A bright sky with slow clouds, white cards, dark navy cards for contrast, beige sticky notes, and design-tool touches: folder-tab frames, blue selection outlines with square handles, mono labels, ruler ticks. Every page is being moved to this system in stages (1 components and footer, 2 login/signup/role, 3 teacher, 4 student, 5 parent). Pages under `/app` still use the older "Warm Editorial Pedagogy" tokens (`primary`, `surface-*`, etc.) until they are replaced.
+Visual reference: ohhmydesign.com (match the look, never copy its text, images or code). A bright sky with slow clouds, white cards, dark navy cards for contrast, beige sticky notes, and design-tool touches: folder-tab frames, blue selection outlines with square handles, mono labels, ruler ticks. Every page is being moved to this system in stages (1 components and footer, 2 login/signup/role, 3 teacher, 4 student, 5 parent). The old `/app` workspace is retired and `/app/*` redirects to `/teacher`; the older "Warm Editorial Pedagogy" tokens (`primary`, `surface-*`, etc.) are still in `tailwind.config.js` but no page uses them for layout anymore. The old weekly family notes (`ParentUpdate.tsx`) are in git history (commit b2e7e9f) for Stage 5.
 
 `/design` shows every component with sample data.
 
@@ -13,6 +13,11 @@ Backgrounds: the landing page uses the sky with clouds (`SkyBackground`). Every 
 Other pages so far:
 - `/login` (`Login.tsx`): "welcome back" header, `login.frame` card. Demo only, signs in as a teacher.
 - `/signup` (`Signup.tsx`): "nice to meet you" header, `signup.frame` card with two steps: pick a role (`RoleCards`), then name, email, password. Students add a class code; parents add an invite code and a preferred language. `?role=teacher` starts on step 2.
+- Demo areas (`components/area/AreaShell.tsx`): `/teacher`, `/student`, `/parent`. Sidebar on desktop, bottom nav on phones, top bar with the class name, a beige "Demo" badge, and a "Viewing as: Teacher / Student / Parent" switch. All three views use the same sample class in `src/lib/sample.ts` (teacher Ms. Park, student Minji Kim, parent Mrs. Kim). "Open the demo" on `/login` signs in as Ms. Park (`DEMO_SESSION`) and opens `/teacher`.
+- `/teacher` (`pages/teacher/Overview.tsx`): the misconception from Quiz 3 as a statement card (who has it, a "Make a retry quiz" link), last week's attendance stat card, a "To do today" frame, lesson ideas in an accordion, and Quiz 3 scores.
+- `/teacher/attendance`: today's class in a frame with Present / Late / Absent for each student (radio groups), "Mark all present", save; last week's stat card; a day-by-day table with a plain-words pattern per student (flagged at twice or more).
+- `/teacher/quizzes`: three steps. Notes (paste, upload, or sample notes; topic, number of questions, difficulty) in a showcase panel; review, where each question is a `q01.frame` you can edit, swap for a new version, or delete, plus "Add your own question"; then "Review and publish" with a student preview. Nothing is published until the teacher ticks the check box and presses Publish. Questions come from `QUESTION_BANK`; the page says so.
+- `/student`, `/parent`: "coming soon" until Stages 4 and 5.
 - `/get-started` (`GetStarted.tsx`): the `RolePicker` with three `teacher.frame` / `student.frame` / `parent.frame` cards, each with three feature chips.
 
 ### Page structure

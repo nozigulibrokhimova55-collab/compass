@@ -7,9 +7,8 @@ import { Frame } from '../components/ui/Frame'
 import { PageShell } from '../components/ui/PageShell'
 import { SectionHeader } from '../components/ui/SectionHeader'
 import { ROLE_HOME } from '../lib/roles'
-import { useSession } from '../lib/session'
-
-export const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+import { isEmail } from '../lib/validate'
+import { DEMO_SESSION, useSession } from '../lib/session'
 
 /** "Alex.Kim@school.edu" becomes "Alex Kim". */
 function nameFromEmail(email: string) {
@@ -126,7 +125,7 @@ export default function Login() {
             </p>
             <p>
               Just looking around?{' '}
-              <Link to="/app" className="font-semibold text-navy underline-offset-4 hover:underline">
+              <Link to="/teacher" onClick={() => signIn(DEMO_SESSION)} className="font-semibold text-navy underline-offset-4 hover:underline">
                 Open the demo
               </Link>
             </p>

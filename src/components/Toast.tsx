@@ -20,15 +20,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div
         aria-live="polite"
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-space-sm pointer-events-none w-[calc(100%-2rem)] max-w-md"
+        className="pointer-events-none fixed bottom-24 left-1/2 z-[100] flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 flex-col items-center gap-2 lg:bottom-6"
       >
         {toasts.map((t) => (
           <div
             key={t.id}
             role="status"
-            className="animate-fade-up pointer-events-auto flex items-center gap-space-sm px-space-md py-space-sm rounded-xl bg-inverse-surface text-inverse-on-surface font-body-sm text-body-sm shadow-[0_12px_32px_-4px_rgba(102,18,20,0.25)]"
+            className="animate-fade-up pointer-events-auto flex items-center gap-2 rounded-xl bg-navy px-4 py-3 font-inter text-[15px] text-white shadow-float"
           >
-            <Icon name={t.icon} className="text-[18px] text-inverse-primary" />
+            <Icon name={t.icon} className="text-[20px] text-accent-soft" />
             <span>{t.message}</span>
           </div>
         ))}
