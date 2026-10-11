@@ -1,13 +1,13 @@
 import { useEffect, type MouseEvent } from 'react'
 import { useLocation } from 'react-router-dom'
 import { FeaturesScroller } from '../components/landing/FeaturesScroller'
-import { Frame } from '../components/landing/Frame'
-import { Chars, Kinetic } from '../components/landing/Kinetic'
+import { SelectFrame } from '../components/ui/SelectFrame'
+import { Chars, Kinetic } from '../components/ui/Kinetic'
 import { RolePicker } from '../components/landing/RolePicker'
-import { SiteFooter } from '../components/landing/SiteFooter'
-import { SiteHeader } from '../components/landing/SiteHeader'
-import { fillHover } from '../components/landing/hover'
-import { SkyBackground } from '../components/landing/SkyBackground'
+import { SiteFooter } from '../components/ui/SiteFooter'
+import { SiteHeader } from '../components/ui/SiteHeader'
+import { fillHover } from '../components/ui/hover'
+import { SkyBackground } from '../components/ui/SkyBackground'
 import { scrollToId, startSmoothScroll } from '../lib/smoothScroll'
 
 const container = 'mx-auto w-full max-w-[1240px] px-4 md:px-8'
@@ -47,7 +47,7 @@ export default function Landing() {
             <br />
             <Chars text="Act on it together." />
           </Kinetic>
-          <Frame label="about.txt" dashed className="mt-10 max-w-[720px] rounded-md bg-white/80 px-6 py-5 backdrop-blur-sm">
+          <SelectFrame label="about.txt" dashed className="mt-10 max-w-[720px] rounded-md bg-white/80 px-6 py-5 backdrop-blur-sm">
             <p className="text-left font-inter text-[18px] leading-[30px] text-navy">
               Compass is a learning platform for high schools that brings teachers, students, and parents together. Teachers can turn their
               lesson notes into quizzes in minutes, review every question, and tailor them to their class. Each answer is checked, and Compass
@@ -55,7 +55,7 @@ export default function Landing() {
               mistakes, so practice goes where it’s needed most. Parents get a simple dashboard showing how their child is doing, in their own
               language.
             </p>
-          </Frame>
+          </SelectFrame>
           <div className="mt-10 flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row">
             <a
               href="#who-are-you"

@@ -203,6 +203,134 @@
   }
 }
 
+/* Notebook background for every page except the landing page: blue paper, a fine grid,
+   a stronger line every five squares, and an orange margin line on wide screens. */
+.notebook-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  pointer-events: none;
+  background-color: #6fa9e5;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.3) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.14) 1px, transparent 1px),
+    linear-gradient(180deg, #5b9be0 0%, #8dbdeb 60%, #a9cdf0 100%);
+  background-size:
+    120px 120px,
+    120px 120px,
+    24px 24px,
+    24px 24px,
+    100% 100%;
+  background-position: -1px -1px;
+}
+@media (min-width: 1024px) {
+  .notebook-bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 72px;
+    width: 2px;
+    background: rgba(232, 87, 42, 0.5);
+  }
+}
+
+/* Step change inside a form: a short fade and slide (ease-out-quart, 220ms). */
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.step-in {
+  animation: step-in 220ms cubic-bezier(0.165, 0.84, 0.44, 1) both;
+}
+
+/* ---------- Design-tool selection marks (ui/Selection.tsx) ---------- */
+/* Hidden until the parent .ui-frame is outlined (drawn on first view, picked) or hovered/focused. */
+.ui-sel {
+  position: absolute;
+  inset: -6px;
+  pointer-events: none;
+  z-index: 2;
+  --sel: #3b8bea;
+}
+.ui-sel.is-orange {
+  --sel: #e8572a;
+}
+.ui-sel-edge {
+  position: absolute;
+  border: 0 solid var(--sel);
+  transition: transform 220ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+.ui-sel-edge.top {
+  top: 0;
+  left: 0;
+  right: 0;
+  border-top-width: 1.5px;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.ui-sel-edge.right {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  border-right-width: 1.5px;
+  transform: scaleY(0);
+  transform-origin: top;
+  transition-delay: 110ms;
+}
+.ui-sel-edge.bottom {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-bottom-width: 1.5px;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition-delay: 220ms;
+}
+.ui-sel-edge.left {
+  top: 0;
+  left: 0;
+  bottom: 0;
+  border-left-width: 1.5px;
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition-delay: 330ms;
+}
+.ui-sel-handle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: #fff;
+  border: 1.5px solid var(--sel);
+  opacity: 0;
+  transform: scale(0);
+  transition:
+    transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1) 380ms,
+    opacity 140ms ease 380ms;
+}
+.ui-frame.is-outlined .ui-sel-edge,
+.ui-frame.is-hoverable:focus-within .ui-sel-edge {
+  transform: none;
+}
+.ui-frame.is-outlined .ui-sel-handle,
+.ui-frame.is-hoverable:focus-within .ui-sel-handle {
+  opacity: 1;
+  transform: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .ui-frame.is-hoverable:hover .ui-sel-edge {
+    transform: none;
+  }
+  .ui-frame.is-hoverable:hover .ui-sel-handle {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Button hovers (from the reference video). */
 
 /* Rolling label: the text slides up and a copy comes in from below. */
@@ -231,7 +359,14 @@
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  transition: color 0.3s ease, border-color 0.3s ease;
+  transition:
+    color 0.3s ease,
+    border-color 0.3s ease,
+    transform 0.15s ease;
+}
+/* Press: a small squeeze, like the reference buttons. */
+.fill-host:active {
+  transform: scale(0.97);
 }
 .fill-host::before {
   content: '';

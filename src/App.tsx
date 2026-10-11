@@ -1,9 +1,11 @@
 import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from './components/AppShell'
-import Auth from './pages/Auth'
+import DesignSystem from './pages/DesignSystem'
 import GetStarted from './pages/GetStarted'
 import Landing from './pages/Landing'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
 import TeacherDashboard from './pages/TeacherDashboard'
 
 const ParentUpdate = lazy(() => import('./pages/ParentUpdate'))
@@ -21,8 +23,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/get-started" element={<GetStarted />} />
-        <Route path="/login" element={<Auth />} />
-        <Route path="/signup" element={<Auth />} />
+        <Route path="/design" element={<DesignSystem />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/app" element={<AppShell />}>
           <Route index element={<TeacherDashboard />} />
           <Route path="radar" element={<MisconceptionRadar />} />

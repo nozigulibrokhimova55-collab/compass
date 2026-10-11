@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ElementType, type ReactNode } from 'react'
 import { prefersReducedMotion } from '../../lib/motion'
 
-type FrameProps = {
+type SelectFrameProps = {
   children: ReactNode
   /** Mono tab label, e.g. `lesson_01.intro`. */
   label?: string
@@ -19,7 +19,7 @@ type FrameProps = {
  * A "selected" design-tool frame: thin blue outline, white square corner handles and a
  * blue tab label. The outline draws itself the first time the frame scrolls into view.
  */
-export function Frame({ children, label, as: Tag = 'div', id, className = '', dashed, show = true, tabPlacement = 'top-left' }: FrameProps) {
+export function SelectFrame({ children, label, as: Tag = 'div', id, className = '', dashed, show = true, tabPlacement = 'top-left' }: SelectFrameProps) {
   const ref = useRef<HTMLElement>(null)
   const [seen, setSeen] = useState(() => prefersReducedMotion() || !('IntersectionObserver' in window))
 

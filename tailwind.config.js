@@ -10,6 +10,8 @@ const mono = ['"JetBrains Mono"', ...kr, 'ui-monospace', 'SFMono-Regular', 'mono
 const hand = ['Caveat', ...kr, 'cursive']
 
 export default {
+  // Hover styles only apply on devices that can really hover (not touch screens).
+  future: { hoverOnlyWhenSupported: true },
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
@@ -19,6 +21,8 @@ export default {
         accent: '#E8572A',
         // Slightly deeper orange for small text and button labels (white on it is 4.9:1).
         'accent-strong': '#C9441A',
+        // Orange for small text on navy (6.7:1). `accent` is only 4.2:1 there.
+        'accent-soft': '#FF8A5C',
         navy: '#161B26',
         // Secondary text on white or translucent white only (7.8:1 on white; too faint on the sky).
         'navy-soft': '#4A5263',

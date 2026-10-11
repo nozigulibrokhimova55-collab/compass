@@ -1,16 +1,25 @@
 # Compass
 
-Front-end demo (Vite, React, TypeScript, Tailwind 3, React Router) for high school science classes. Sample data lives in `src/lib/data.ts`. Tokens live in `tailwind.config.js`; global CSS in `src/index.css`.
+Front-end demo (Vite, React, TypeScript, Tailwind 3, React Router) for high school science classes. Sample data for the redesigned pages lives in `src/lib/sample.ts` (Ms. Park's class, Minji Kim); older app pages use `src/lib/data.ts`. Tokens live in `tailwind.config.js`; global CSS in `src/index.css`.
 
-## Design system: "Sky canvas" (landing page)
+## Design system: "Sky canvas" (whole site)
 
-The landing page is calm and clear: a bright sky with slow clouds, white cards, and a few design-tool touches (blue "selected" frames with square handles and mono tab labels). The app pages under `/app` still use the older "Warm Editorial Pedagogy" tokens (`primary`, `surface-*`, etc.) until they are restyled.
+Visual reference: ohhmydesign.com (match the look, never copy its text, images or code). A bright sky with slow clouds, white cards, dark navy cards for contrast, beige sticky notes, and design-tool touches: folder-tab frames, blue selection outlines with square handles, mono labels, ruler ticks. Every page is being moved to this system in stages (1 components and footer, 2 login/signup/role, 3 teacher, 4 student, 5 parent). Pages under `/app` still use the older "Warm Editorial Pedagogy" tokens (`primary`, `surface-*`, etc.) until they are replaced.
+
+`/design` shows every component with sample data.
+
+Backgrounds: the landing page uses the sky with clouds (`SkyBackground`). Every other page uses `PageShell`, which puts the content on `NotebookBackground`: blue paper with a notebook grid (fine 24px squares, a stronger line every 120px) and an orange margin line on wide screens.
+
+Other pages so far:
+- `/login` (`Login.tsx`): "welcome back" header, `login.frame` card. Demo only, signs in as a teacher.
+- `/signup` (`Signup.tsx`): "nice to meet you" header, `signup.frame` card with two steps: pick a role (`RoleCards`), then name, email, password. Students add a class code; parents add an invite code and a preferred language. `?role=teacher` starts on step 2.
+- `/get-started` (`GetStarted.tsx`): the `RolePicker` with three `teacher.frame` / `student.frame` / `parent.frame` cards, each with three feature chips.
 
 ### Page structure
 
 The landing page (`src/pages/Landing.tsx`) has only these parts, in order:
 
-1. Sticky header: logo; "About", "Features", "Who it's for"; "Log in" and "Sign up" (both scroll to "Who are you?", or go to `/get-started` from other pages).
+1. Sticky header: logo; "About", "Features", "Who it’s for"; "Log in" (goes to `/login`) and "Sign up" (scrolls to "Who are you?", or goes to `/get-started` from other pages).
 2. Hero (`#about`): kinetic headline, intro in a dashed frame, "Get started" and "See how it works", a "scroll ↓" hint.
 3. "Who are you?" (`#who-are-you`): three selectable role cards and a "Continue as a …" button to `/signup?role=…`. The same picker is the `/get-started` page.
 4. Features (`#features`): five panels. Pinned with sideways scrolling on wide screens; a stacked list on mobile or with reduced motion.
@@ -22,6 +31,7 @@ The landing page (`src/pages/Landing.tsx`) has only these parts, in order:
 |---|---|---|
 | `sky-top` → `sky-bottom` | `#5B9BE0` → `#C3DCF3` | Fixed vertical sky gradient behind the page, with drifting CSS clouds |
 | `accent` | `#E8572A` | Orange: big feature numbers and other large text on white |
+| `accent-soft` | `#FF8A5C` | Small orange text on navy (6.7:1), e.g. footer and stat card eyebrows |
 | `accent-strong` | `#C9441A` | Orange for small text and button fills such as "Sign up" (white text on it is 4.9:1) |
 | `navy` | `#161B26` | Body and heading text, "Continue as …" button, footer |
 | `navy-soft` | `#4A5263` | Secondary text, on white or translucent white only (7.8:1 on white) |
@@ -35,7 +45,7 @@ Contrast rules:
 - Smaller text that sits on the sky (intro paragraph, short lines, labels) gets a translucent white backing (`bg-white/80 backdrop-blur-sm`). Big navy headlines can sit directly on the sky (5.9:1 on the darkest blue).
 - `accent` (#E8572A) is only 3.6:1 on white, so use it for large text (24px+ or 19px+ bold) and decoration. Small orange text and button fills use `accent-strong`.
 - Frame tab labels are navy text on `select` blue (5:1). White on `select` is too faint for 11px text.
-- Don't put orange text directly on the sky; it's too faint there. Orange goes on white cards.
+- Don't put orange text directly on the sky; it's too faint there. Orange goes on white cards, on a white pill, or (`accent-soft` for small text) on navy.
 
 ### Type
 
@@ -48,16 +58,31 @@ Contrast rules:
 
 Pretendard is the Korean fallback in every stack.
 
-### Components (`src/components/landing/`)
+### Components
 
-- `SiteHeader`: sticky white header. Collapses to logo, "Log in", "Sign up" and a menu button on mobile.
-- `Frame`: the "selected" frame. Thin blue outline, white square corner handles, optional tab label (top-left or bottom-right), optional dashed outline. The outline draws itself the first time it scrolls into view; `show={false}` hides it (used for the role cards, which show it when picked).
-- `RolePicker`: the "Who are you?" heading, role cards and continue button.
-- `FeaturesScroller`: the five feature panels and a "1 of 5" indicator. Each panel is a design-file window: a top bar with window dots and a file name (`01_quiz_draft.fig`), a dotted canvas, and the sample card (labeled "Sample") selected in a `Frame` with a `… · selected` tab at the bottom right and an orange check badge showing "Made for".
-- `SiteFooter`: navy, rounded top corners, faint dot grid.
-- `Kinetic` + `Chars` (`Kinetic.tsx`): large headlines split into letters. Letters near the mouse rise into a smooth bump (about a quarter of the letter height, fading over about three letters each side) and tilt along it, then ease back. Use on every big headline (h1, h2, feature titles). `intro` adds a letter-by-letter rise on load (hero only).
-- Button hovers (`hover.tsx`): header links ("About", "Features", "Who it's for", "Log in") get a pale pill and a rolling label (`RollLabel` inside a `roll-host` link). "Sign up" is orange text that fills into an orange button while its label rolls. Big buttons ("Get started", "See how it works", "Continue as …") use `fillHover` on a `fill-host` element: a circle of `--fill` grows from where the mouse enters and shrinks toward where it leaves.
+Shared components live in `src/components/ui/`; landing-only pieces (`FeaturesScroller`, `RolePicker`) in `src/components/landing/`. Build new pages from these.
+
+- `Frame`: card with a folder-style tab (`attendance.frame`, lowercase mono). Slides up and draws its blue selection outline once when it first scrolls into view; after that the outline shows on hover or keyboard focus. `selected` keeps it on; `tone="navy"` for a dark card; `tabEnd` puts something (on a white pill) at the right of the tab row.
+- `Selection`: the outline and four square handles, used by `Frame` and `ShowcasePanel` (`tone="orange"`). CSS is `.ui-sel` in `index.css`.
+- `SelectFrame`: the older floating-tab selection frame used in the landing hero ("about.txt") and feature panels.
+- `SectionHeader`: orange script line (on a white pill so it stays readable on the sky), huge uppercase kinetic headline, optional `StickyNote`.
+- `StickyNote`: beige note with tape, rotated (`tilt`).
+- `StatementCard`: big orange quote mark, bold headline whose last line (`highlight`) is orange, grey body, mono footer row.
+- `StatCard`: dark navy card, big white numbers, orange symbols, mono labels. Values must be computed from sample data (`attendanceStats()`, `quizStats()`).
+- `Chip`: outlined pill with an icon; a toggle button (`selected`), a link (`to`), or a `static` tag.
+- `Button`: `orange`, `navy`, `outline` or `soft`. A circle grows from the mouse on hover, slight squeeze on press.
+- `ThreadCard`: chat card with header avatars, messages with times and file chips, orange mono dividers (`01 · THIS WEEK`), optional reply footer. `Avatar` is exported too.
+- `Accordion`: frame-tab cards with orange `01` numbers and a plus that turns into a cross. Accessible button plus region.
+- `ShowcasePanel` + `BrowserWindow`: white panel with an orange selection outline, number badge, title with an orange second line, text, and a browser mockup on the right.
+- `SiteHeader`: sticky white header with rolling-label links. Collapses to logo, "Log in", "Sign up" and a menu button on mobile.
+- `SiteFooter`: navy with rounded top, dot grid, `footer.frame` tab, orange mono eyebrow, contact line, three link columns with mono headings, ruler ticks, a huge "Compass" wordmark with an orange C, and a mono bottom bar.
+- `Kinetic` + `Chars`: large headlines split into letters. Letters near the mouse rise into a smooth bump and tilt, then ease back. Use on every big headline. `intro` adds a letter-by-letter rise on load; `hoverColor` also turns letters near the mouse orange (hero only).
+- `hover.tsx`: `RollLabel` (rolling label inside a `roll-host` link) and `fillHover` (circle fill on a `fill-host` element, used by `Button`).
 - `SkyBackground`: fixed gradient plus clouds made from radial gradients (no blur filters).
+- `PageShell` + `NotebookBackground`: layout for every page except the landing page.
+- `Field`, `TextInput`, `PasswordInput`, `inputClass` (`Field.tsx`): labeled inputs with the error or hint right under the input, wired with `aria-invalid` and `aria-describedby`.
+- `RoleCards` (in `landing/RolePicker.tsx`): the three role frames; `compact` for the sign-up step.
+- `useInView`: true once an element scrolls into view; drives the `.reveal` slide-up on cards.
 - White cards: `rounded-3xl border border-card-line bg-white shadow-card`.
 - `CONTACT_EMAIL` in `src/lib/site.ts` is a placeholder (`hello@compass.example`) to replace before launch.
 
@@ -66,8 +91,9 @@ Pretendard is the Korean fallback in every stack.
 - Lenis smooth scrolling (`src/lib/smoothScroll.ts`, synced to GSAP ScrollTrigger). Use `scrollToId()` for in-page links so the sticky header doesn't cover the target.
 - GSAP + ScrollTrigger via `useGSAP` (`src/lib/motion.ts`). Animate only `transform` and `opacity`.
 - Features pin only when `(min-width: 768px) and (prefers-reduced-motion: no-preference)`; the layout uses the matching `md:motion-safe:` Tailwind variants. Panels rest between slides so scrolling steps through them one at a time.
-- The headline letter bump (letters near the mouse also turn orange on the hero headline), the rolling labels and the circle fills run only with a real mouse (`(hover: hover) and (pointer: fine)`). Touch screens skip them.
-- Respect `prefers-reduced-motion`: no Lenis, no cloud drift, frames appear already drawn, features as a normal list.
+- Cards slide up when they scroll into view; frames draw their outline once on appear. Form steps switch with `.step-in` (220ms fade and 8px slide, ease-out-quart); focus moves to the new step's heading.
+- The headline letter bump, the rolling labels, the circle fills and frame hover outlines run only with a real mouse (`(hover: hover) and (pointer: fine)`). Tailwind's `hoverOnlyWhenSupported` keeps every `hover:` style off touch screens. Buttons and chips squeeze slightly when pressed.
+- Respect `prefers-reduced-motion`: no Lenis, no cloud drift, no slide-ups, frames appear already drawn, features as a normal list.
 - Mobile: stack everything, no pinned sideways scrolling.
 
 ### Writing rules

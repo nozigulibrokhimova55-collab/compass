@@ -1,8 +1,8 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { gsap, useGSAP } from '../../lib/motion'
 import { Icon } from '../Icon'
-import { Frame } from './Frame'
-import { Chars, Kinetic } from './Kinetic'
+import { SelectFrame } from '../ui/SelectFrame'
+import { Chars, Kinetic } from '../ui/Kinetic'
 
 /**
  * Pinned sideways scrolling only on wider screens with motion allowed; everything else gets a
@@ -271,9 +271,9 @@ export function FeaturesScroller() {
                   </div>
 
                   <div className="relative pt-5">
-                    <Frame label={`${f.frame} · selected`} tabPlacement="bottom-right" className="rounded-2xl">
+                    <SelectFrame label={`${f.frame} · selected`} tabPlacement="bottom-right" className="rounded-2xl">
                       {f.sample}
-                    </Frame>
+                    </SelectFrame>
                     {/* Orange "picked" badge with who it's made for */}
                     <div className="absolute right-0 top-0 z-10 flex translate-x-3 items-center gap-2">
                       <span className="-rotate-3 rounded-lg bg-accent-strong px-3 py-1 font-inter text-[13px] font-semibold text-white shadow-float">

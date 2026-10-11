@@ -12,7 +12,8 @@ const LINKS = [
 
 /**
  * Sticky site header. On the landing page every link scrolls smoothly; on other pages the
- * section links go back to the landing page and "Log in" / "Sign up" go to /get-started.
+ * section links go back to the landing page. "Log in" goes to /login; "Sign up" scrolls to
+ * "Who are you?" on the landing page and goes to /get-started elsewhere.
  */
 export function SiteHeader() {
   const { pathname } = useLocation()
@@ -64,9 +65,9 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <a href="/get-started" onClick={toRoles} className="roll-host rounded-full px-3 py-2 font-inter text-[15px] font-semibold text-navy hover:bg-sky-bottom/40 transition-colors">
+          <Link to="/login" onClick={() => setOpen(false)} className="roll-host rounded-full px-3 py-2 font-inter text-[15px] font-semibold text-navy hover:bg-sky-bottom/40 transition-colors">
             <RollLabel>Log in</RollLabel>
-          </a>
+          </Link>
           <a
             href="/get-started"
             onClick={toRoles}
