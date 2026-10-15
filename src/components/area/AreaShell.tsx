@@ -1,6 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import type { Role } from '../../lib/roles'
-import { CLASS } from '../../lib/sample'
 import { useSession } from '../../lib/session'
 import { Icon } from '../Icon'
 import { NotebookBackground } from '../ui/NotebookBackground'
@@ -10,7 +9,7 @@ export type AreaNavItem = { to: string; label: string; icon: string; end?: boole
 
 const VIEWS: { role: Role; label: string; icon: string; to: string; soon?: boolean }[] = [
   { role: 'teacher', label: 'Teacher', icon: 'school', to: '/teacher' },
-  { role: 'student', label: 'Student', icon: 'backpack', to: '/student', soon: true },
+  { role: 'student', label: 'Student', icon: 'backpack', to: '/student' },
   { role: 'parent', label: 'Parent', icon: 'family_restroom', to: '/parent', soon: true },
 ]
 
@@ -65,17 +64,20 @@ type AreaShellProps = {
   role: Role
   person: Person & { title: string }
   nav: AreaNavItem[]
+  /** The class name shown in the sidebar and top bar. Empty hides it. */
+  classLabel?: string
 }
 
 /**
  * Layout for the teacher, student and parent areas: notebook background, a sidebar on desktop,
- * a bottom nav on phones, and a top bar with the class, a Demo badge and the "Viewing as" switch.
+ * a bottom nav on phones, and a top bar with the class. In the demo it also has a Demo badge and
+ * the "Viewing as" switch, so anyone can see all three sides of the sample class.
  */
-export function AreaShell({ role, person, nav }: AreaShellProps) {
-  const { signOut } = useSession()
+export function AreaShell({ role, person, nav, classLabel = '' }: AreaShellProps) {
+  const { signOut, isDemo } = useSession()
   const navigate = useNavigate()
-  const logOut = () => {
-    signOut()
+  const logOut = async () => {
+    await signOut()
     navigate('/')
   }
   const navLink = ({ isActive }: { isActive: boolean }) =>
@@ -96,7 +98,7 @@ export function AreaShell({ role, person, nav }: AreaShellProps) {
           <img src="/images/logo.svg" alt="" className="h-9 w-auto" />
           <span className="font-grotesk text-[20px] font-extrabold tracking-tight">Compass</span>
         </Link>
-        <p className="mt-6 px-3 font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-navy-soft">{CLASS.name}</p>
+        {classLabel && <p className="mt-6 px-3 font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-navy-soft">{classLabel}</p>}
         {nav.length > 0 && (
           <nav aria-label="Area" className="mt-3 flex flex-col gap-1">
             {nav.map((item) => (
@@ -127,15 +129,19 @@ export function AreaShell({ role, person, nav }: AreaShellProps) {
               <img src="/images/logo.svg" alt="" className="h-8 w-auto" />
               <span className="font-grotesk text-[19px] font-extrabold tracking-tight">Compass</span>
             </Link>
-            <p className="hidden font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-navy-soft lg:block">{CLASS.name}</p>
-            <div className="ml-auto flex items-center gap-3">
-              <DemoBadge />
-              <ViewingAs role={role} className="hidden md:flex" />
+            {classLabel && <p className="hidden font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-navy-soft lg:block">{classLabel}</p>}
+            {isDemo && (
+              <div className="ml-auto flex items-center gap-3">
+                <DemoBadge />
+                <ViewingAs role={role} className="hidden md:flex" />
+              </div>
+            )}
+          </div>
+          {isDemo && (
+            <div className="border-t border-card-line/80 px-4 py-2 md:hidden">
+              <ViewingAs role={role} />
             </div>
-          </div>
-          <div className="border-t border-card-line/80 px-4 py-2 md:hidden">
-            <ViewingAs role={role} />
-          </div>
+          )}
         </header>
 
         <main id="main" className="mx-auto max-w-[1120px] px-4 pb-32 pt-10 md:px-8 lg:pb-20">

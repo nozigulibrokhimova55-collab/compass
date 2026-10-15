@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
 import { useToast } from '../../components/Toast'
@@ -7,10 +7,14 @@ import { Button } from '../../components/ui/Button'
 import { Chip } from '../../components/ui/Chip'
 import { Field, inputClass } from '../../components/ui/Field'
 import { Frame } from '../../components/ui/Frame'
+import { PageNotice } from '../../components/ui/PageNotice'
 import { SectionHeader } from '../../components/ui/SectionHeader'
 import { ShowcasePanel } from '../../components/ui/ShowcasePanel'
 import { StatementCard } from '../../components/ui/StatementCard'
-import { CLASS, QUESTION_BANK, QUIZZES, TOPICS, type Question } from '../../lib/sample'
+import { dueOptions } from '../../lib/attendance'
+import { useClassData } from '../../lib/classData'
+import { errorMessage, publishQuiz } from '../../lib/db'
+import { QUESTION_BANK, QUIZZES, TOPICS, type Question } from '../../lib/sample'
 
 type Stage = 'setup' | 'review' | 'published'
 type Draft = Question & { uid: number; editing: boolean; custom?: boolean }
@@ -22,7 +26,6 @@ const DIFFICULTIES: { id: Difficulty; label: string }[] = [
   { id: 'medium', label: 'Medium' },
   { id: 'stretch', label: 'Stretch' },
 ]
-const DUE_DATES = ['Fri, Oct 16', 'Mon, Oct 19', 'Wed, Oct 21']
 const SAMPLE_NOTES = `Newton’s first law: an object keeps doing what it’s doing (staying still, or moving at a steady speed in a straight line) unless a net force acts on it.
 Demo: air table puck vs. block on sandpaper. Friction is what slows things down.
 Common mistake: thinking a moving object needs a constant push to keep moving.`
@@ -43,6 +46,7 @@ const STEPS: { id: Stage; label: string }[] = [
 
 export default function TeacherQuizzes() {
   const notify = useToast()
+  const { isDemo, loading, error, cls, quizzes, reload } = useClassData()
   const [params] = useSearchParams()
   const fromLink = TOPICS.find((t) => t.id === params.get('topic'))?.id
 
@@ -55,18 +59,38 @@ export default function TeacherQuizzes() {
   const [generating, setGenerating] = useState(false)
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [title, setTitle] = useState('')
-  const [due, setDue] = useState(DUE_DATES[0])
+  const dueChoices = useMemo(() => dueOptions(), [])
+  const [due, setDue] = useState(dueChoices[0].value)
   const [checked, setChecked] = useState(false)
+  const [publishing, setPublishing] = useState(false)
   const reviewRef = useRef<HTMLDivElement>(null)
-
-  const topicName = TOPICS.find((t) => t.id === topic)?.name ?? ''
-  const canGenerate = (notes.trim().length > 0 || fileName) && !generating
-  const editingAny = drafts.some((d) => d.editing)
-  const nextNumber = QUIZZES.length + 2 // Quizzes 2 to 4 exist, so the new one is Quiz 5.
 
   useEffect(() => {
     if (stage !== 'setup') reviewRef.current?.focus()
   }, [stage])
+
+  if (loading) return <p className="pt-24 text-center font-inter text-[15px] text-navy">Loading…</p>
+  if (error) {
+    return (
+      <PageNotice label="error.frame" title="We couldn’t load your class" alert>
+        {error}
+      </PageNotice>
+    )
+  }
+  if (!cls) {
+    return (
+      <PageNotice label="class.frame" title="No class yet">
+        We couldn’t find a class for your account.
+      </PageNotice>
+    )
+  }
+
+  const topicName = TOPICS.find((t) => t.id === topic)?.name ?? ''
+  const canGenerate = (notes.trim().length > 0 || fileName) && !generating
+  const editingAny = drafts.some((d) => d.editing)
+  const dueLabel = dueChoices.find((d) => d.value === due)?.label ?? due
+  // In the demo, Quizzes 2 to 4 exist, so the new one is Quiz 5.
+  const nextNumber = isDemo ? QUIZZES.length + 2 : quizzes.length + 1
 
   const onFile = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -101,9 +125,27 @@ export default function TeacherQuizzes() {
   const addOwn = () =>
     setDrafts((ds) => [...ds, { id: `own-${nextUid}`, uid: nextUid++, topicId: topic, text: '', options: ['', '', '', ''], answer: 0, why: '', editing: true, custom: true }])
 
-  const publish = () => {
-    setStage('published')
-    notify(`${title} is live for ${CLASS.name}.`)
+  const publish = async () => {
+    setPublishing(true)
+    try {
+      if (!isDemo) {
+        await publishQuiz({
+          classId: cls.id,
+          title: title.trim(),
+          topicId: topic,
+          dueDate: due,
+          questions: drafts.map((d) => ({ topicId: d.topicId, text: d.text, options: d.options, answer: d.answer, why: d.why })),
+        })
+        await reload()
+      }
+      setStage('published')
+      notify(`${title.trim()} is saved for ${cls.name}.`)
+    } catch (err) {
+      console.error('Could not publish the quiz', err)
+      notify(errorMessage(err, 'We couldn’t publish the quiz. Try again.'), 'error')
+    } finally {
+      setPublishing(false)
+    }
   }
   const restart = () => {
     setStage('setup')
@@ -144,7 +186,7 @@ export default function TeacherQuizzes() {
               <p>Paste what you taught or upload a file. Pick a topic, how many questions, and how hard. You’ll check every question before students see anything.</p>
               <p className="mt-4 flex items-start gap-2 rounded-xl bg-note px-4 py-3 font-inter text-[15px] leading-6 text-navy">
                 <Icon name="science" className="mt-0.5 text-[20px]" />
-                In this demo, questions come from a small sample set about Newton’s laws.
+                For now, questions come from a small sample set about Newton’s laws.
               </p>
             </>
           }
@@ -279,9 +321,9 @@ export default function TeacherQuizzes() {
                 <fieldset>
                   <legend className="mb-2 font-inter text-[15px] font-semibold">Due</legend>
                   <div className="flex flex-wrap gap-2">
-                    {DUE_DATES.map((date) => (
-                      <Chip key={date} icon="event" selected={due === date} onClick={() => setDue(date)}>
-                        {date}
+                    {dueChoices.map((choice) => (
+                      <Chip key={choice.value} icon="event" selected={due === choice.value} onClick={() => setDue(choice.value)}>
+                        {choice.label}
                       </Chip>
                     ))}
                   </div>
@@ -291,8 +333,8 @@ export default function TeacherQuizzes() {
                   I’ve read every question and the answers are right.
                 </label>
                 <div>
-                  <Button variant="orange" size="lg" icon="send" onClick={publish} disabled={!checked || editingAny || drafts.length === 0 || !title.trim()}>
-                    Publish to {CLASS.name}
+                  <Button variant="orange" size="lg" icon={publishing ? undefined : 'send'} onClick={publish} disabled={!checked || editingAny || drafts.length === 0 || !title.trim() || publishing}>
+                    {publishing ? 'Publishing…' : `Publish to ${cls.name}`}
                   </Button>
                   {(editingAny || drafts.length === 0) && (
                     <p className="mt-2 font-inter text-[14px] text-navy-soft">{drafts.length === 0 ? 'Add at least one question first.' : 'Save or cancel the question you’re editing first.'}</p>
@@ -303,7 +345,7 @@ export default function TeacherQuizzes() {
           >
             <BrowserWindow url="compass.app/student/quiz">
               <div className="rounded-xl border border-card-line bg-white p-4">
-                <p className="font-mono text-[12px] uppercase tracking-[0.12em] text-navy-soft">What students will see · Due {due}</p>
+                <p className="font-mono text-[12px] uppercase tracking-[0.12em] text-navy-soft">What students will see · Due {dueLabel}</p>
                 <p className="mt-2 font-grotesk text-[20px] font-extrabold leading-6 tracking-[-0.01em]">{title || 'Untitled quiz'}</p>
                 <p className="mt-1 font-inter text-[14px] text-navy-soft">{drafts.length} questions · one at a time</p>
                 {drafts[0] && (
@@ -327,8 +369,17 @@ export default function TeacherQuizzes() {
 
       {stage === 'published' && (
         <div ref={reviewRef} tabIndex={-1} className="step-in mt-8 grid gap-6 outline-none lg:grid-cols-[1.4fr_1fr]">
-          <StatementCard as="h2" title={`${title} is live for`} highlight={`${CLASS.name}.`} footer={[`${drafts.length} questions`, `Due ${due}`]}>
-            <p>Students will see it in their quiz list. You’ll get a summary of what they found tricky once a few have finished.</p>
+          <StatementCard
+            as="h2"
+            title={isDemo ? `${title} is live for` : `${title} is live for`}
+            highlight={`${cls.name}.`}
+            footer={[`${drafts.length} questions`, `Due ${dueLabel}`]}
+          >
+            <p>
+              {isDemo
+                ? 'Students will see it in their quiz list. You’ll get a summary of what they found tricky once a few have finished.'
+                : 'Your students can take it from their Quizzes page now. You will see their scores on your Overview.'}
+            </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button variant="navy" icon="add" onClick={restart}>
                 Make another quiz

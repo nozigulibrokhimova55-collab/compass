@@ -1,60 +1,77 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { Button } from '../components/ui/Button'
 import { Field, PasswordInput, TextInput } from '../components/ui/Field'
 import { Frame } from '../components/ui/Frame'
 import { PageShell } from '../components/ui/PageShell'
 import { SectionHeader } from '../components/ui/SectionHeader'
+import { nameFromEmail } from '../lib/people'
 import { ROLE_HOME } from '../lib/roles'
-import { isEmail } from '../lib/validate'
 import { DEMO_SESSION, useSession } from '../lib/session'
-
-/** "Alex.Kim@school.edu" becomes "Alex Kim". */
-function nameFromEmail(email: string) {
-  return email
-    .split('@')[0]
-    .split(/[._-]+/)
-    .filter(Boolean)
-    .map((p) => p[0].toUpperCase() + p.slice(1))
-    .join(' ')
-}
+import { isSupabaseConfigured } from '../lib/supabase'
+import { isEmail } from '../lib/validate'
 
 export default function Login() {
-  const { signIn } = useSession()
+  const { session, loading, signIn, logIn, sendReset } = useSession()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [keep, setKeep] = useState(true)
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
+  const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [resetSent, setResetSent] = useState(false)
 
-  const submit = (e: FormEvent) => {
+  // Already signed in with a real account: go straight to your own area.
+  if (isSupabaseConfigured && !loading && session && !session.demo) return <Navigate to={ROLE_HOME[session.role]} replace />
+
+  const submit = async (e: FormEvent) => {
     e.preventDefault()
     const next: typeof errors = {}
     if (!isEmail(email)) next.email = 'Enter a valid email address.'
     if (!password) next.password = 'Enter your password.'
     setErrors(next)
+    setFormError('')
     if (next.email || next.password) {
       document.getElementById(next.email ? 'login-email' : 'login-password')?.focus()
       return
     }
     setSubmitting(true)
-    // Demo only: there is no real account check yet.
-    window.setTimeout(() => {
-      signIn({ name: nameFromEmail(email), email, role: 'teacher' })
-      navigate(ROLE_HOME.teacher)
-    }, 450)
+
+    if (!isSupabaseConfigured) {
+      // Demo only: there is no real account check.
+      window.setTimeout(() => {
+        signIn({ name: nameFromEmail(email), email, role: 'teacher' })
+        navigate(ROLE_HOME.teacher)
+      }, 450)
+      return
+    }
+
+    const result = await logIn(email.trim(), password, keep)
+    if (!result.ok) {
+      setSubmitting(false)
+      setFormError(result.error)
+      return
+    }
+    navigate(ROLE_HOME[result.session.role])
   }
 
-  const forgot = () => {
+  const forgot = async () => {
     if (!isEmail(email)) {
       setErrors({ email: 'Type your email first, then we can send a reset link.' })
       document.getElementById('login-email')?.focus()
       return
     }
     setErrors({})
+    setFormError('')
+    if (isSupabaseConfigured) {
+      const result = await sendReset(email.trim())
+      if (!result.ok) {
+        setFormError(result.error)
+        return
+      }
+    }
     setResetSent(true)
   }
 
@@ -104,6 +121,13 @@ export default function Login() {
             <p role="status" className="step-in flex items-start gap-2 rounded-xl bg-[#E3F5EA] px-4 py-3 font-inter text-[15px] leading-6 text-[#1F5C35]">
               <Icon name="mark_email_read" className="mt-0.5 text-[20px]" />
               If {email} has an account, a reset link is on its way.
+            </p>
+          )}
+
+          {formError && (
+            <p role="alert" className="flex items-start gap-2 rounded-xl bg-[#FBE1D8] px-4 py-3 font-inter text-[15px] leading-6 text-[#9C3412]">
+              <Icon name="error" className="mt-0.5 text-[20px]" />
+              {formError}
             </p>
           )}
 
