@@ -165,3 +165,32 @@ export async function fetchQuizResults(quizId: string): Promise<{ studentId: str
   if (error) throw error
   return (data ?? []).map((r) => ({ studentId: r.student_id, correct: r.correct }))
 }
+
+// ---------------------------------------------------------------------------
+// Writing questions with AI (the generate-quiz Edge Function in supabase/functions)
+// ---------------------------------------------------------------------------
+
+export type GenerateInput = { notes: string; topicId: string; count: number; difficulty: 'gentle' | 'medium' | 'stretch'; exclude?: string[] }
+
+/** The function answers errors with `{ error: "plain words" }`. Pull that out of the failed response. */
+async function functionError(err: unknown): Promise<string> {
+  const response = err && typeof err === 'object' && 'context' in err ? (err.context as Response | undefined) : undefined
+  if (response && typeof response.json === 'function') {
+    try {
+      const body = await response.json()
+      if (body && typeof body.error === 'string') return body.error
+    } catch {
+      // Not JSON. Fall through to the generic message.
+    }
+  }
+  return 'We couldn’t reach the question writer. Check your connection and try again.'
+}
+
+/** Asks Gemini (through our Edge Function) to write questions from the teacher's notes. */
+export async function generateQuiz(input: GenerateInput): Promise<QuizQuestionInput[]> {
+  const { data, error } = await client().functions.invoke('generate-quiz', { body: input })
+  if (error) throw new Error(await functionError(error))
+  const list = data && Array.isArray(data.questions) ? data.questions : null
+  if (!list || list.length === 0) throw new Error('The AI did not send back any questions. Try again.')
+  return list.map((q: QuizQuestionInput) => ({ topicId: q.topicId, text: q.text, options: q.options, answer: q.answer, why: q.why }))
+}

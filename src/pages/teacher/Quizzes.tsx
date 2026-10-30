@@ -13,7 +13,7 @@ import { ShowcasePanel } from '../../components/ui/ShowcasePanel'
 import { StatementCard } from '../../components/ui/StatementCard'
 import { dueOptions } from '../../lib/attendance'
 import { useClassData } from '../../lib/classData'
-import { errorMessage, publishQuiz } from '../../lib/db'
+import { errorMessage, generateQuiz, publishQuiz } from '../../lib/db'
 import { QUESTION_BANK, QUIZZES, TOPICS, type Question } from '../../lib/sample'
 
 type Stage = 'setup' | 'review' | 'published'
@@ -57,6 +57,9 @@ export default function TeacherQuizzes() {
   const [count, setCount] = useState(4)
   const [difficulty, setDifficulty] = useState<Difficulty>('medium')
   const [generating, setGenerating] = useState(false)
+  const [genError, setGenError] = useState<string | null>(null)
+  const [swapping, setSwapping] = useState<number | null>(null)
+  const [fileNote, setFileNote] = useState<string | null>(null)
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [title, setTitle] = useState('')
   const dueChoices = useMemo(() => dueOptions(), [])
@@ -86,7 +89,8 @@ export default function TeacherQuizzes() {
   }
 
   const topicName = TOPICS.find((t) => t.id === topic)?.name ?? ''
-  const canGenerate = (notes.trim().length > 0 || fileName) && !generating
+  // The demo only needs something to look at. Real questions are written from the notes themselves.
+  const canGenerate = (isDemo ? notes.trim().length > 0 || Boolean(fileName) : notes.trim().length > 0) && !generating
   const editingAny = drafts.some((d) => d.editing)
   const dueLabel = dueChoices.find((d) => d.value === due)?.label ?? due
   // In the demo, Quizzes 2 to 4 exist, so the new one is Quiz 5.
@@ -96,19 +100,46 @@ export default function TeacherQuizzes() {
     const file = e.target.files?.[0]
     if (!file) return
     setFileName(file.name)
-    // Plain text files are read in; other formats just show their name in this demo.
-    if (/\.(txt|md)$/i.test(file.name)) file.text().then((t) => setNotes(t.slice(0, 4000)))
+    setFileNote(null)
+    // Plain text files are read in. Other formats can't be read yet, so say so instead of pretending.
+    if (/\.(txt|md)$/i.test(file.name)) {
+      file.text().then((t) => setNotes(t.slice(0, 8000)))
+    } else if (!isDemo) {
+      setFileNote('We can only read .txt and .md files for now. Paste the text from your file into the box instead.')
+    }
   }
 
-  const generate = () => {
+  const toDrafts = (qs: { topicId: string; text: string; options: string[]; answer: number; why: string }[]): Draft[] =>
+    qs.map((q) => {
+      const uid = nextUid++
+      return { ...q, id: `ai-${uid}`, uid, editing: false }
+    })
+
+  const generate = async () => {
     setGenerating(true)
-    window.setTimeout(() => {
-      setDrafts(pick(topic, count, new Set()).map((q) => ({ ...q, uid: nextUid++, editing: false })))
+    setGenError(null)
+    if (isDemo) {
+      window.setTimeout(() => {
+        setDrafts(pick(topic, count, new Set()).map((q) => ({ ...q, uid: nextUid++, editing: false })))
+        setTitle(`Quiz ${nextNumber}: ${topicName}`)
+        setGenerating(false)
+        setChecked(false)
+        setStage('review')
+      }, 900)
+      return
+    }
+    try {
+      const qs = await generateQuiz({ notes, topicId: topic, count, difficulty })
+      setDrafts(toDrafts(qs))
       setTitle(`Quiz ${nextNumber}: ${topicName}`)
-      setGenerating(false)
       setChecked(false)
       setStage('review')
-    }, 900)
+    } catch (err) {
+      console.error('Could not write the questions', err)
+      setGenError(errorMessage(err, 'We couldn’t write the questions. Try again.'))
+    } finally {
+      setGenerating(false)
+    }
   }
 
   const update = (uid: number, patch: Partial<Draft>) => setDrafts((ds) => ds.map((d) => (d.uid === uid ? { ...d, ...patch } : d)))
@@ -116,11 +147,25 @@ export default function TeacherQuizzes() {
     setDrafts((ds) => ds.filter((d) => d.uid !== uid))
     notify('Question removed.', 'delete')
   }
-  const regenerate = (uid: number) => {
-    const fresh = pick(topic, 1, new Set(drafts.map((d) => d.id)))[0]
-    if (!fresh) return notify('No more sample questions to swap in.', 'info')
-    setDrafts((ds) => ds.map((d) => (d.uid === uid ? { ...fresh, uid, editing: false } : d)))
-    notify('Swapped in a new question.', 'autorenew')
+  const regenerate = async (uid: number) => {
+    if (isDemo) {
+      const fresh = pick(topic, 1, new Set(drafts.map((d) => d.id)))[0]
+      if (!fresh) return notify('No more sample questions to swap in.', 'info')
+      setDrafts((ds) => ds.map((d) => (d.uid === uid ? { ...fresh, uid, editing: false } : d)))
+      notify('Swapped in a new question.', 'autorenew')
+      return
+    }
+    setSwapping(uid)
+    try {
+      const [fresh] = await generateQuiz({ notes, topicId: topic, count: 1, difficulty, exclude: drafts.map((d) => d.text).filter(Boolean) })
+      setDrafts((ds) => ds.map((d) => (d.uid === uid ? { ...fresh, id: `ai-${uid}-${nextUid++}`, uid, editing: false } : d)))
+      notify('Swapped in a new question.', 'autorenew')
+    } catch (err) {
+      console.error('Could not swap the question', err)
+      notify(errorMessage(err, 'We couldn’t write a new question. Try again.'), 'error')
+    } finally {
+      setSwapping(null)
+    }
   }
   const addOwn = () =>
     setDrafts((ds) => [...ds, { id: `own-${nextUid}`, uid: nextUid++, topicId: topic, text: '', options: ['', '', '', ''], answer: 0, why: '', editing: true, custom: true }])
@@ -186,7 +231,9 @@ export default function TeacherQuizzes() {
               <p>Paste what you taught or upload a file. Pick a topic, how many questions, and how hard. You’ll check every question before students see anything.</p>
               <p className="mt-4 flex items-start gap-2 rounded-xl bg-note px-4 py-3 font-inter text-[15px] leading-6 text-navy">
                 <Icon name="science" className="mt-0.5 text-[20px]" />
-                For now, questions come from a small sample set about Newton’s laws.
+                {isDemo
+                  ? 'In this demo, questions come from a small sample set about Newton’s laws.'
+                  : 'Gemini writes the questions from your notes. Your notes are sent to Google to do that. Nothing else about your class is.'}
               </p>
             </>
           }
@@ -212,6 +259,11 @@ export default function TeacherQuizzes() {
               <button type="button" onClick={() => setNotes(SAMPLE_NOTES)} className="min-h-11 cursor-pointer px-1 font-inter text-[15px] font-semibold text-accent-strong underline-offset-4 hover:underline">
                 Use sample notes
               </button>
+              {fileNote && (
+                <p role="status" className="basis-full font-inter text-[14px] text-navy">
+                  {fileNote}
+                </p>
+              )}
               {fileName && (
                 <span className="inline-flex items-center gap-1.5 rounded-lg border border-card-line bg-white px-2.5 py-1.5 font-mono text-[12px]">
                   <Icon name="description" className="text-[16px] text-select" />
@@ -254,11 +306,16 @@ export default function TeacherQuizzes() {
               </fieldset>
             </div>
 
+            {genError && (
+              <p role="alert" className="rounded-xl border-2 border-accent-strong bg-white/85 px-4 py-3 font-inter text-[15px]">
+                {genError}
+              </p>
+            )}
             <div className="flex flex-wrap items-center gap-3 border-t border-dashed border-card-line pt-5">
               <Button variant="orange" size="lg" icon={generating ? undefined : 'auto_awesome'} onClick={generate} disabled={!canGenerate}>
                 {generating ? 'Writing questions…' : 'Make questions'}
               </Button>
-              {!notes.trim() && !fileName && <p className="font-inter text-[14px] text-navy-soft">Add notes or a file first.</p>}
+              {!notes.trim() && (isDemo ? !fileName : true) && <p className="font-inter text-[14px] text-navy-soft">Add notes or a file first.</p>}
             </div>
           </div>
         </ShowcasePanel>
@@ -290,6 +347,7 @@ export default function TeacherQuizzes() {
                   onSave={(patch) => update(d.uid, { ...patch, editing: false, custom: false })}
                   onCancel={() => (d.custom ? setDrafts((ds) => ds.filter((x) => x.uid !== d.uid)) : update(d.uid, { editing: false }))}
                   onRegenerate={() => regenerate(d.uid)}
+                  busy={swapping === d.uid}
                   onDelete={() => remove(d.uid)}
                 />
               </li>
@@ -403,10 +461,12 @@ type QuestionFrameProps = {
   onCancel: () => void
   onRegenerate: () => void
   onDelete: () => void
+  /** A new version of this question is being written. */
+  busy?: boolean
 }
 
 /** One generated question in a frame: read view with actions, or an inline editor. */
-function QuestionFrame({ number, draft, onEdit, onSave, onCancel, onRegenerate, onDelete }: QuestionFrameProps) {
+function QuestionFrame({ number, draft, onEdit, onSave, onCancel, onRegenerate, onDelete, busy }: QuestionFrameProps) {
   const [text, setText] = useState(draft.text)
   const [options, setOptions] = useState(draft.options)
   const [answer, setAnswer] = useState(draft.answer)
@@ -510,9 +570,9 @@ function QuestionFrame({ number, draft, onEdit, onSave, onCancel, onRegenerate, 
           <Icon name="edit" className="text-[18px]" />
           Edit
         </button>
-        <button type="button" onClick={onRegenerate} className={action}>
+        <button type="button" onClick={onRegenerate} disabled={busy} className={`${action} disabled:cursor-not-allowed disabled:opacity-50`}>
           <Icon name="autorenew" className="text-[18px]" />
-          New version
+          {busy ? 'Writing…' : 'New version'}
         </button>
         <button type="button" onClick={onDelete} className={`${action} text-accent-strong hover:bg-[#FBE1D8]`}>
           <Icon name="delete" className="text-[18px]" />

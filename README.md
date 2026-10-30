@@ -21,14 +21,30 @@ With no Supabase keys, Compass runs as a demo: sample data, nothing saved to a s
 5. Optional: under **Authentication > Providers > Email**, turn off **Confirm email** while testing. When it is on, new people see "Check your email" after signing up and must click the link before logging in.
 6. Restart `npm run dev` so it picks up `.env.local`.
 
+## Turn on AI quiz questions (Gemini)
+
+The teacher's "Make questions" button asks Gemini to write questions from the lesson notes. The call goes through a Supabase Edge Function, so the Gemini key stays on the server and never reaches the browser. Without this step, live teachers see an error when they press "Make questions" (the demo is not affected).
+
+1. Get a key at [aistudio.google.com](https://aistudio.google.com) (Get API key).
+2. Install the [Supabase CLI](https://supabase.com/docs/guides/cli) and log in: `supabase login`, then `supabase link --project-ref YOUR_PROJECT_REF` (the ref is in your project URL).
+3. Save the key as a secret and deploy the function:
+   ```bash
+   supabase secrets set GEMINI_API_KEY=your-key
+   supabase functions deploy generate-quiz
+   ```
+4. Optional: `supabase secrets set GEMINI_MODEL=gemini-3.8-flash` to pick a different model. That is already the default.
+
+Only signed-in teachers can call it. It checks every answer the model sends back (4 different options, one right answer in range, a reason) and drops any question that fails. Teachers still review every question before publishing. Their notes are sent to Google to write the questions, and the page says so.
+
 ## What is live and what is still sample
 
 | Live with Supabase | Still sample data |
 |---|---|
 | Sign up, log in, log out, "keep me signed in", password reset | Misconception card, lesson ideas |
-| Teacher gets a class and a join code at sign-up | Quiz questions (picked from a small sample set, not generated) |
+| Teacher gets a class and a join code at sign-up | Quiz questions in the demo (picked from a small sample set) |
 | Students join with the class code, parents link with the student's invite code | Parent page (placeholder for now) |
 | Teacher roster, attendance (today plus the last 5 school days), saved quizzes | |
+| Quiz questions written by Gemini from the teacher's notes |
 | Students take quizzes (one attempt), see answers and reasons afterwards, and teachers see the scores | |
 
 "Open the demo" on the login page still works with Supabase on. It opens the sample class as Ms. Park and never touches the database.
@@ -36,10 +52,11 @@ With no Supabase keys, Compass runs as a demo: sample data, nothing saved to a s
 ## How it is put together
 
 - `src/lib/supabase.ts`: the client. `isSupabaseConfigured` is false when the keys are missing.
-- `src/lib/db.ts`: every database query. Pages never call Supabase directly.
+- `src/lib/db.ts`: every database query, plus `generateQuiz` for the Gemini function. Pages never call Supabase directly.
 - `src/lib/session.tsx`: who is signed in (`useSession`), plus `logIn`, `signUp`, `signOut`, `sendReset`, `updatePassword`. `isDemo` is true for the sample class.
 - `src/lib/classData.tsx`: the signed-in person's class, roster, and quizzes (`useClassData`).
 - `src/lib/useAttendance.ts`: today's marks and the recent days.
+- `supabase/functions/generate-quiz/`: the Edge Function (`index.ts`) and its pure checks (`validate.ts`).
 - `supabase/schema.sql`: tables, the sign-up trigger, and row level security. Teachers only see their own classes, students only their own class, parents only their child. Students can't read quiz answers until they finish a quiz.
 - `src/App.tsx`: with Supabase on, `/teacher`, `/student`, and `/parent` need a login, and each person can only open their own area.
 
