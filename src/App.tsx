@@ -26,7 +26,10 @@ const StudentGaps = lazy(() => import('./pages/student/Gaps'))
 const StudentAttendance = lazy(() => import('./pages/student/Attendance'))
 const StudentRetry = lazy(() => import('./pages/student/Retry'))
 const StudentCheck = lazy(() => import('./pages/student/Check'))
-const AreaPlaceholder = lazy(() => import('./pages/AreaPlaceholder'))
+const ParentHome = lazy(() => import('./pages/parent/Home'))
+const ParentProgress = lazy(() => import('./pages/parent/Progress'))
+const ParentMessages = lazy(() => import('./pages/parent/Messages'))
+const ParentSettings = lazy(() => import('./pages/parent/Settings'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 
 const TEACHER_NAV: AreaNavItem[] = [
@@ -136,10 +139,10 @@ export default function App() {
         </Route>
 
         <Route path="/parent" element={<Area role="parent" nav={PARENT_NAV} />}>
-          <Route index element={<AreaPlaceholder isHome title="Home" icon="home" home="/parent" about="How your child’s week went, what they’re working on, and one thing to ask them tonight." />} />
-          <Route path="progress" element={<AreaPlaceholder title="Progress" icon="trending_up" home="/parent" about="How each topic is going over time, and recent quizzes in plain words." />} />
-          <Route path="messages" element={<AreaPlaceholder title="Messages" icon="forum" home="/parent" about="Notes from your child’s teacher, and a place to reply." />} />
-          <Route path="settings" element={<AreaPlaceholder title="Settings" icon="settings" home="/parent" about="Your language, and a way to link another child with an invite code." />} />
+          <Route index element={<ParentHome />} />
+          <Route path="progress" element={<ParentProgress />} />
+          <Route path="messages" element={<ParentMessages />} />
+          <Route path="settings" element={<ParentSettings />} />
         </Route>
 
         {/* The old /app workspace is gone. */}

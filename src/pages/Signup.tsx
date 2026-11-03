@@ -14,7 +14,7 @@ import { isSupabaseConfigured } from '../lib/supabase'
 import { isEmail } from '../lib/validate'
 import { NOT_CONNECTED, NotConnectedNote } from '../components/ui/NotConnectedNote'
 
-const LANGUAGES = ['English', '한국어 (Korean)', 'Español (Spanish)', '中文 (Chinese)', 'Tiếng Việt (Vietnamese)']
+const LANGUAGES = ['English', '한국어 (Korean)', 'Русский (Russian)', 'Монгол (Mongolian)']
 
 type Errors = Partial<Record<'name' | 'email' | 'password' | 'classCode' | 'inviteCode' | 'agreed', string>>
 

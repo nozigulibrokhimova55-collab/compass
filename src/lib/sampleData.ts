@@ -37,6 +37,14 @@ type Saved = {
   retries: Record<string, RetryState>
   /** Catch-up checks a student finished, keyed by `userId:YYYY-MM-DD`, with the score. */
   checks: Record<string, number>
+  /** Parents: the child picked in the switcher. */
+  child: string | null
+  /** Parents: preferred language, once changed in Settings. */
+  language: string | null
+  /** Parents: invite codes checked in Settings, waiting to be linked. */
+  pendingLinks: string[]
+  /** Parents: replies to the teacher, per child. */
+  replies: Record<string, { text: string; time: string }[]>
   /** Evidence ids the teacher marked "this is wrong". */
   flagged: string[]
   /** Review plans the teacher approved or edited. */
@@ -44,7 +52,7 @@ type Saved = {
 }
 
 const STORE_KEY = 'compass.sampleData'
-const EMPTY: Saved = { topics: {}, confidence: {}, retries: {}, checks: {}, flagged: [], plans: {} }
+const EMPTY: Saved = { topics: {}, confidence: {}, retries: {}, checks: {}, child: null, language: null, pendingLinks: [], replies: {}, flagged: [], plans: {} }
 
 function load(): Saved {
   try {
@@ -427,3 +435,157 @@ export function useCatchUpCheck(userId: string | undefined, day: string, topic: 
   return { isSample: true as const, topicName: match.name, questions: CHECK_BANK[match.id], score, saveScore }
 }
 
+// ---------------------------------------------------------------------------
+// Parents: children, the weekly update, messages, settings
+// ---------------------------------------------------------------------------
+
+export type MessageSection = 'this_week' | 'working_on' | 'how_to_help'
+
+export type ChildUpdate = {
+  id: string
+  name: string
+  firstName: string
+  initials: string
+  className: string
+  teacher: { name: string; initials: string }
+  weekLabel: string
+  /** "This week" statement: the headline, its orange last line, and one or two plain sentences. */
+  thisWeek: { title: string; highlight: string; body: string }
+  strengths: { topic: string; text: string }[]
+  workingOn: { topic: string; text: string }[]
+  attendance: { here: number; late: number; missed: number; days: number }
+  askTonight: string
+  topics: TopicProgress[]
+  quizzes: { title: string; when: string; plain: string; done: boolean }[]
+  messages: { section: MessageSection; time: string; text: string }[]
+}
+
+const SAMPLE_CHILDREN: ChildUpdate[] = [
+  {
+    id: 'minji',
+    name: 'Minji Kim',
+    firstName: 'Minji',
+    initials: 'MK',
+    className: 'Physics 1, Period 3',
+    teacher: { name: 'Ms. Park', initials: 'MP' },
+    weekLabel: 'Oct 26 to Oct 30',
+    thisWeek: {
+      title: 'Minji had a steady week and',
+      highlight: 'finished every quiz on time.',
+      body: 'She got 5 of 6 right on the free-body diagrams quiz. She still mixes up the two forces in a pair, which is very normal at this point.',
+    },
+    strengths: [
+      { topic: 'Newton’s first law', text: 'Explains why a moving thing keeps moving.' },
+      { topic: 'Free-body diagrams', text: 'Draws the forces on an object sitting still.' },
+    ],
+    workingOn: [{ topic: 'Newton’s third law', text: 'Why the two forces in a pair don’t cancel out.' }],
+    attendance: { here: 4, late: 1, missed: 0, days: 5 },
+    askTonight: 'Ask Minji why a rolling ball eventually stops.',
+    topics: SAMPLE_PROGRESS,
+    quizzes: [
+      { title: 'Quiz 4: Forces and motion', when: 'Due Fri, Nov 6', plain: 'Not started yet. There’s still time.', done: false },
+      { title: 'Quiz 3: Free-body diagrams', when: 'Fri, Oct 30', plain: '5 of 6 right. She missed one question about forces in pairs.', done: true },
+      { title: 'Quiz 2: Newton’s first law', when: 'Fri, Oct 23', plain: 'All 6 right.', done: true },
+    ],
+    messages: [
+      { section: 'this_week', time: 'Fri 3:40 PM', text: 'Hi Mrs. Kim. Minji finished the free-body diagrams quiz and got 5 of 6 right. She was a few minutes late on Wednesday, nothing to worry about.' },
+      { section: 'working_on', time: 'Fri 3:41 PM', text: 'We’re on Newton’s third law. Minji sometimes thinks the two forces in a pair cancel out. We’ll practice that on Monday with a short demo.' },
+      { section: 'how_to_help', time: 'Fri 3:42 PM', text: 'At dinner, push your palms against hers and ask: who pushed harder? You both pushed the same. That’s the whole idea.' },
+    ],
+  },
+  {
+    id: 'joon',
+    name: 'Joon Kim',
+    firstName: 'Joon',
+    initials: 'JK',
+    className: 'Biology 9, Period 2',
+    teacher: { name: 'Mr. Ortiz', initials: 'MO' },
+    weekLabel: 'Oct 26 to Oct 30',
+    thisWeek: {
+      title: 'Joon missed one class and',
+      highlight: 'caught up with the check.',
+      body: 'He was out on Tuesday and did the 3-question catch-up the next day. He’s quick with cell parts and still building up photosynthesis.',
+    },
+    strengths: [{ topic: 'Cell parts', text: 'Names what each part of a cell does.' }],
+    workingOn: [
+      { topic: 'Photosynthesis', text: 'Where a plant’s food actually comes from.' },
+      { topic: 'Food chains', text: 'Which way the energy moves.' },
+    ],
+    attendance: { here: 4, late: 0, missed: 1, days: 5 },
+    askTonight: 'Ask Joon what a plant needs to make its own food.',
+    topics: [
+      { id: 'cells', name: 'Cell parts', weeks: [0.55, 0.66, 0.74, 0.84] },
+      { id: 'photo', name: 'Photosynthesis', weeks: [0.3, 0.38, 0.47, 0.55] },
+      { id: 'chains', name: 'Food chains', weeks: [0.5, 0.5, 0.53, 0.58] },
+    ],
+    quizzes: [
+      { title: 'Quiz 3: Photosynthesis', when: 'Due Thu, Nov 5', plain: 'Not started yet.', done: false },
+      { title: 'Quiz 2: Cell parts', when: 'Thu, Oct 29', plain: '4 of 5 right.', done: true },
+    ],
+    messages: [
+      { section: 'this_week', time: 'Thu 4:10 PM', text: 'Hello. Joon was out on Tuesday and already did his catch-up check. Thanks for helping him stay on it.' },
+      { section: 'working_on', time: 'Thu 4:11 PM', text: 'We’re on photosynthesis. Joon thinks plants get their food from the soil. Most of it comes from air and light.' },
+      { section: 'how_to_help', time: 'Thu 4:12 PM', text: 'If you have a houseplant, ask him what it “eats.” Let him explain, then ask where the light goes.' },
+    ],
+  },
+]
+
+/**
+ * The children this parent is linked to, and which one is picked.
+ * TODO(Mauricio): add `fetchMyChildren()` to db.ts: parent_links joined with profiles (name) and class_members →
+ * classes (name). Row level security already lets parents read all three for their own children.
+ */
+export function useChildren() {
+  const s = useSaved()
+  const selected = SAMPLE_CHILDREN.find((c) => c.id === s.child) ?? SAMPLE_CHILDREN[0]
+  const select = useCallback((id: string) => update((st) => ({ ...st, child: id })), [])
+  return { isSample: true as const, children: SAMPLE_CHILDREN, selected, select }
+}
+
+/**
+ * The weekly update for one child: the "This week" summary, strengths, working on, attendance,
+ * one thing to ask tonight, topic progress and recent quizzes. Same words the student sees.
+ * TODO(Mauricio): attendance can come from the attendance table now (parents can read their child's rows). The rest
+ * needs per-topic results (see useTopicProgress) and a `weekly_updates` table the teacher approves before parents see it.
+ */
+export function useParentUpdates(childId: string) {
+  return { isSample: true as const, update: SAMPLE_CHILDREN.find((c) => c.id === childId) ?? SAMPLE_CHILDREN[0] }
+}
+
+/**
+ * Messages with the teacher about one child, plus the parent's replies.
+ * TODO(Mauricio): add a `messages (class_id, student_id, from_id, section, text, created_at)` table with row level
+ * security for the teacher and the child's parents, and fetch/send functions in db.ts.
+ */
+export function useMessages(childId: string) {
+  const s = useSaved()
+  const replies = s.replies[childId] ?? []
+  const send = useCallback(
+    (text: string) => {
+      const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+      update((st) => ({ ...st, replies: { ...st.replies, [childId]: [...(st.replies[childId] ?? []), { text: text.trim(), time: `Today ${time}` }] } }))
+    },
+    [childId],
+  )
+  return { isSample: true as const, replies, send }
+}
+
+export const LANGUAGES = [
+  { id: 'Korean', label: '한국어', english: 'Korean' },
+  { id: 'English', label: 'English', english: 'English' },
+  { id: 'Russian', label: 'Русский', english: 'Russian' },
+  { id: 'Mongolian', label: 'Монгол', english: 'Mongolian' },
+]
+
+/**
+ * A parent's preferred language and the invite codes waiting to be linked.
+ * TODO(Mauricio): save the language with an `updateMyLanguage(language)` function in db.ts (profiles.language;
+ * people may already update their own). Linking another child needs a `link_child(p_code)` database function
+ * that inserts into parent_links, since parents can't insert there directly.
+ */
+export function useParentSettings() {
+  const s = useSaved()
+  const setLanguage = useCallback((language: string) => update((st) => ({ ...st, language })), [])
+  const addPending = useCallback((code: string) => update((st) => ({ ...st, pendingLinks: [...new Set([...st.pendingLinks, code])] })), [])
+  return { isSample: true as const, language: s.language ?? 'English', setLanguage, pendingLinks: s.pendingLinks, addPending }
+}
