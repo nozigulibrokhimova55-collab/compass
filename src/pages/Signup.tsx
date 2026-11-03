@@ -12,6 +12,7 @@ import { ROLE_HOME, type Role } from '../lib/roles'
 import { useSession } from '../lib/session'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { isEmail } from '../lib/validate'
+import { NOT_CONNECTED, NotConnectedNote } from '../components/ui/NotConnectedNote'
 
 const LANGUAGES = ['English', '한국어 (Korean)', 'Español (Spanish)', '中文 (Chinese)', 'Tiếng Việt (Vietnamese)']
 
@@ -19,7 +20,7 @@ type Errors = Partial<Record<'name' | 'email' | 'password' | 'classCode' | 'invi
 
 /** Two steps: pick a role, then your details. `/signup?role=teacher` skips straight to step 2. */
 export default function Signup() {
-  const { session, loading, signIn, signUp } = useSession()
+  const { session, loading, signUp } = useSession()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const fromLink = ROLE_OPTIONS.find((r) => r.id === params.get('role'))?.id ?? null
@@ -73,16 +74,11 @@ export default function Signup() {
       document.getElementById(`signup-${first}`)?.focus()
       return
     }
-    setSubmitting(true)
-
     if (!isSupabaseConfigured) {
-      // Demo only: nothing is saved to a server.
-      window.setTimeout(() => {
-        signIn({ name: name.trim(), email, role })
-        navigate(ROLE_HOME[role])
-      }, 450)
+      setFormError(NOT_CONNECTED)
       return
     }
+    setSubmitting(true)
 
     const result = await signUp({
       name: name.trim(),
@@ -177,6 +173,8 @@ export default function Signup() {
                     </span>
                   )}
                 </div>
+
+                {!isSupabaseConfigured && <NotConnectedNote />}
 
                 <div className="grid gap-5 md:grid-cols-2">
                   <Field id="signup-name" label="Full name" icon="badge" error={errors.name}>

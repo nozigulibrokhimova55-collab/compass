@@ -6,14 +6,14 @@ import { Field, PasswordInput, TextInput } from '../components/ui/Field'
 import { Frame } from '../components/ui/Frame'
 import { PageShell } from '../components/ui/PageShell'
 import { SectionHeader } from '../components/ui/SectionHeader'
-import { nameFromEmail } from '../lib/people'
 import { ROLE_HOME } from '../lib/roles'
-import { DEMO_SESSION, useSession } from '../lib/session'
+import { useSession } from '../lib/session'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { isEmail } from '../lib/validate'
+import { NOT_CONNECTED, NotConnectedNote } from '../components/ui/NotConnectedNote'
 
 export default function Login() {
-  const { session, loading, signIn, logIn, sendReset } = useSession()
+  const { session, loading, logIn, sendReset } = useSession()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -37,16 +37,11 @@ export default function Login() {
       document.getElementById(next.email ? 'login-email' : 'login-password')?.focus()
       return
     }
-    setSubmitting(true)
-
     if (!isSupabaseConfigured) {
-      // Demo only: there is no real account check.
-      window.setTimeout(() => {
-        signIn({ name: nameFromEmail(email), email, role: 'teacher' })
-        navigate(ROLE_HOME.teacher)
-      }, 450)
+      setFormError(NOT_CONNECTED)
       return
     }
+    setSubmitting(true)
 
     const result = await logIn(email.trim(), password, keep)
     if (!result.ok) {
@@ -65,12 +60,14 @@ export default function Login() {
     }
     setErrors({})
     setFormError('')
-    if (isSupabaseConfigured) {
-      const result = await sendReset(email.trim())
-      if (!result.ok) {
-        setFormError(result.error)
-        return
-      }
+    if (!isSupabaseConfigured) {
+      setFormError(NOT_CONNECTED)
+      return
+    }
+    const result = await sendReset(email.trim())
+    if (!result.ok) {
+      setFormError(result.error)
+      return
     }
     setResetSent(true)
   }
@@ -82,6 +79,8 @@ export default function Login() {
       <Frame label="login.frame" className="mx-auto mt-12 w-full max-w-[480px]" bodyClassName="p-6 sm:p-8">
         <form onSubmit={submit} noValidate className="flex flex-col gap-5">
           <p className="font-inter text-[16px] leading-6 text-navy-soft">Pick up right where you left off.</p>
+
+          {!isSupabaseConfigured && <NotConnectedNote />}
 
           <Field id="login-email" label="Email" icon="mail" error={errors.email}>
             <TextInput
@@ -145,12 +144,6 @@ export default function Login() {
               New here?{' '}
               <Link to="/get-started" className="font-semibold text-accent-strong underline-offset-4 hover:underline">
                 Create an account
-              </Link>
-            </p>
-            <p>
-              Just looking around?{' '}
-              <Link to="/teacher" onClick={() => signIn(DEMO_SESSION)} className="font-semibold text-navy underline-offset-4 hover:underline">
-                Open the demo
               </Link>
             </p>
           </div>
