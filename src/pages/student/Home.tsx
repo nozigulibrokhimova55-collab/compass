@@ -1,111 +1,142 @@
-import { Link } from 'react-router-dom'
-import { Icon } from '../../components/Icon'
-import { useToast } from '../../components/Toast'
+import { SampleTag } from '../../components/area/AreaBits'
+import { Bento, BentoItem } from '../../components/area/Bento'
+import { plural, useClassGate } from '../../components/area/classGate'
+import { FamilyCard } from '../../components/student/FamilyCard'
+import { dueText } from '../../components/student/format'
 import { Button } from '../../components/ui/Button'
+import { EmptyState } from '../../components/ui/EmptyState'
 import { Frame } from '../../components/ui/Frame'
-import { PageNotice } from '../../components/ui/PageNotice'
 import { SectionHeader } from '../../components/ui/SectionHeader'
-import { longDay } from '../../lib/attendance'
+import { StatCard } from '../../components/ui/StatCard'
+import { StickyNote } from '../../components/ui/StickyNote'
 import { useClassData } from '../../lib/classData'
-import type { StudentQuiz } from '../../lib/db'
+import { useTopicProgress } from '../../lib/sampleData'
 import { useSession } from '../../lib/session'
+import { useMistakes } from '../../lib/useMistakes'
+import { useMyAttendance } from '../../lib/useMyAttendance'
+import { useToday } from '../../lib/useToday'
 
-function QuizRow({ quiz }: { quiz: StudentQuiz }) {
-  const detail = quiz.finished ? `${quiz.score} of ${quiz.questionCount} right` : quiz.dueDate ? `Due ${longDay(quiz.dueDate)}` : 'Ready when you are'
-  return (
-    <li>
-      <Link to={`/student/quiz/${quiz.id}`} className="group flex min-h-16 items-center gap-3 py-3">
-        <Icon name={quiz.finished ? 'task_alt' : 'quiz'} className={`text-[26px] ${quiz.finished ? 'text-navy-soft' : 'text-select'}`} />
-        <span className="flex-1 font-inter text-[16px]">
-          {quiz.title}
-          <span className="block font-inter text-[14px] text-navy-soft">
-            {detail} · {quiz.questionCount} {quiz.questionCount === 1 ? 'question' : 'questions'}
-          </span>
-        </span>
-        <span className="rounded-full border-[1.5px] border-navy px-3 py-0.5 font-inter text-[14px] font-medium">{quiz.finished ? 'Review' : 'Start'}</span>
-      </Link>
-    </li>
-  )
+const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? name
+
+/** Student Home: next quiz, retries due, what's getting better, attendance this month, and the family note. */
+export default function StudentHome() {
+  const gate = useClassGate({ student: true })
+  return gate ?? <HomeBody />
 }
 
-/** The student's home: their quizzes, and the invite code a parent uses to link up. */
-export default function StudentHome() {
-  const { isDemo, user } = useSession()
-  const notify = useToast()
-  const { loading, error, cls, studentQuizzes } = useClassData()
-  const inviteCode = !isDemo ? user.inviteCode : null
+function HomeBody() {
+  const { user } = useSession()
+  const { cls, studentQuizzes, reload } = useClassData()
+  const now = useToday()
+  const month = useMyAttendance(now.getFullYear(), now.getMonth())
+  const retries = useMistakes()
+  const { improving } = useTopicProgress()
+  const monthName = now.toLocaleDateString('en-US', { month: 'long' })
 
-  if (loading) return <p className="pt-24 text-center font-inter text-[15px] text-navy">Loading…</p>
-  if (error) {
-    return (
-      <PageNotice label="error.frame" title="We couldn’t load your class" alert>
-        {error}
-      </PageNotice>
-    )
-  }
-  if (!cls) {
-    return (
-      <PageNotice label="class.frame" title="No class yet">
-        We couldn’t find a class for your account.
-      </PageNotice>
-    )
-  }
-
-  const todo = studentQuizzes.filter((q) => !q.finished)
-  const done = studentQuizzes.filter((q) => q.finished)
-
-  const copyInvite = async () => {
-    if (!inviteCode) return
-    try {
-      await navigator.clipboard.writeText(inviteCode)
-      notify('Invite code copied.', 'content_copy')
-    } catch {
-      notify('Couldn’t copy. Select the code and copy it by hand.', 'info')
-    }
-  }
+  const next = studentQuizzes.filter((q) => !q.finished).sort((a, b) => (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999'))[0]
+  const anyFinished = studentQuizzes.some((q) => q.finished)
 
   return (
     <>
-      <SectionHeader as="h1" size="sm" align="left" script="your quizzes" title={`Hi, ${isDemo ? 'Minji' : user.name}`} />
-      <p className="mt-4 font-inter text-[17px] text-navy-soft">You’re in {cls.name}.</p>
+      <SectionHeader as="h1" size="sm" align="left" script="hey there" title={`Hi, ${firstName(user.name)}`} />
+      {cls && <p className="mt-4 w-fit rounded-full bg-white/85 px-3 py-1 font-inter text-[15px] text-navy backdrop-blur-sm">You’re in {cls.name}</p>}
 
-      <Frame label="todo.frame" className="mt-10 max-w-2xl" bodyClassName="p-6 md:p-8">
-        <h2 className="font-grotesk text-[22px] font-extrabold tracking-[-0.01em]">To do</h2>
-        {todo.length === 0 ? (
-          <p className="mt-2 font-inter text-[16px] leading-7 text-navy-soft">
-            {studentQuizzes.length === 0 ? 'No quizzes yet. When your teacher shares one, it shows up here.' : 'You’re all caught up.'}
-          </p>
-        ) : (
-          <ul className="mt-2 divide-y divide-card-line">
-            {todo.map((q) => (
-              <QuizRow key={q.id} quiz={q} />
-            ))}
-          </ul>
-        )}
-      </Frame>
+      <Bento className="mt-8">
+        {/* Next quiz */}
+        <BentoItem span={4}>
+          {next ? (
+            <Frame label="next.frame" className="h-full" bodyClassName="flex h-full flex-col p-6 md:p-7">
+              <p className="font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-navy-soft">Next quiz</p>
+              <h2 className="mt-1 font-grotesk text-[26px] font-extrabold leading-tight tracking-[-0.02em] md:text-[30px]">{next.title}</h2>
+              <p className="mt-2 font-inter text-[16px] text-navy-soft">
+                {dueText(next.dueDate)} · {plural(next.questionCount, 'question')}
+              </p>
+              <Button to={`/student/quiz/${next.id}`} variant="orange" size="lg" icon="play_arrow" className="mt-6 w-full sm:w-fit">
+                Start the quiz
+              </Button>
+            </Frame>
+          ) : (
+            <EmptyState
+              label="next.frame"
+              icon="celebration"
+              title={studentQuizzes.length === 0 ? 'No quizzes yet' : 'You’re all caught up'}
+              className="h-full"
+              action={anyFinished ? { label: 'Review finished quizzes', to: '/student/quizzes' } : { label: 'Check again', icon: 'refresh', onClick: () => void reload() }}
+            >
+              {studentQuizzes.length === 0 ? 'When your teacher shares a quiz, it shows up here.' : 'Nothing is due right now. New quizzes show up here.'}
+            </EmptyState>
+          )}
+        </BentoItem>
 
-      {done.length > 0 && (
-        <Frame label="done.frame" className="mt-8 max-w-2xl" bodyClassName="p-6 md:p-8">
-          <h2 className="font-grotesk text-[22px] font-extrabold tracking-[-0.01em]">Finished</h2>
-          <ul className="mt-2 divide-y divide-card-line">
-            {done.map((q) => (
-              <QuizRow key={q.id} quiz={q} />
-            ))}
-          </ul>
-        </Frame>
-      )}
+        {/* Retries due */}
+        <BentoItem span={2}>
+          <Frame label="retry.frame" className="h-full" bodyClassName="flex h-full flex-col p-6">
+            <p className="font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-navy-soft">Retry</p>
+            {retries.loading ? (
+              <p className="mt-2 font-inter text-[16px] text-navy-soft">Loading…</p>
+            ) : retries.due.length > 0 ? (
+              <>
+                <p className="mt-1 font-grotesk text-[44px] font-black leading-none tracking-[-0.04em]">
+                  {retries.due.length}
+                  <span className="text-accent"> due</span>
+                </p>
+                <p className="mt-2 font-inter text-[15px] leading-6 text-navy-soft">Questions you missed before, back for another try.</p>
+                <Button to="/student/retry" variant="navy" icon="replay" className="mt-auto w-full">
+                  Start retry
+                </Button>
+              </>
+            ) : (
+              <p className="mt-2 font-inter text-[16px] leading-7 text-navy-soft">
+                {retries.upcoming.length > 0 ? `Nothing due today. ${plural(retries.upcoming.length, 'question')} will come back soon.` : 'Nothing to retry. Missed questions come back here after 2 days.'}
+              </p>
+            )}
+          </Frame>
+        </BentoItem>
 
-      {inviteCode && (
-        <Frame label="invite.frame" className="mt-8 max-w-2xl" bodyClassName="p-6 md:p-8">
-          <h2 className="font-grotesk text-[22px] font-extrabold tracking-[-0.01em]">Your invite code</h2>
-          <p className="mt-2 font-inter text-[16px] leading-7 text-navy-soft">A parent or guardian types this when they sign up, and they can then follow how you’re doing.</p>
-          <p className="mt-4 font-mono text-[24px] font-semibold tracking-[0.08em] text-navy">{inviteCode}</p>
-          <div className="mt-5">
-            <Button variant="outline" icon="content_copy" onClick={copyInvite}>
-              Copy code
-            </Button>
+        {/* Getting better at */}
+        <BentoItem span={2}>
+          <div className="relative flex h-full items-center justify-center py-4">
+            <StickyNote tilt={-2} className="w-full max-w-none">
+              <span className="block font-hand text-[24px] font-bold leading-7">You’re getting better at</span>
+              <span className="mt-1 block font-grotesk text-[22px] font-extrabold leading-tight">{improving.name}</span>
+              <span className="mt-2 block text-[14px]">Up a lot since four weeks ago. Keep it going.</span>
+              <SampleTag className="mt-3" />
+            </StickyNote>
           </div>
-        </Frame>
+        </BentoItem>
+
+        {/* Attendance this month */}
+        <BentoItem span={2}>
+          <StatCard
+            className="h-full"
+            title={`${monthName} · attendance`}
+            stats={
+              month.loading || month.error || month.counts.days === 0
+                ? [
+                    { value: '–', label: 'Here' },
+                    { value: '–', label: 'Missed' },
+                  ]
+                : [
+                    { value: String(month.counts.present + month.counts.late), symbol: `/${month.counts.days}`, label: 'Here' },
+                    { value: String(month.counts.absent), label: 'Missed' },
+                  ]
+            }
+            note={month.error ?? (month.counts.days === 0 && !month.loading ? 'Nothing marked yet this month.' : month.counts.absent > 0 ? 'Missed a day? There’s a short catch-up check for it.' : undefined)}
+          />
+        </BentoItem>
+
+        {/* Family note */}
+        <BentoItem span={2}>
+          <FamilyCard />
+        </BentoItem>
+      </Bento>
+
+      {month.counts.absent > 0 && (
+        <div className="mt-8">
+          <Button to="/student/attendance" variant="outline" icon="arrow_forward">
+            See catch-up checks
+          </Button>
+        </div>
       )}
     </>
   )
