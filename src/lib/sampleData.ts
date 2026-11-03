@@ -31,6 +31,12 @@ export type PlanStep = { minutes: number; title: string; text: string }
 type Saved = {
   /** Today's topic, keyed by `classId:YYYY-MM-DD`. */
   topics: Record<string, string>
+  /** How sure a student was of each answer, keyed by `userId:quizId`, then question id. */
+  confidence: Record<string, Record<string, Confidence>>
+  /** Retry schedule for each missed question, keyed by `userId:questionId`. */
+  retries: Record<string, RetryState>
+  /** Catch-up checks a student finished, keyed by `userId:YYYY-MM-DD`, with the score. */
+  checks: Record<string, number>
   /** Evidence ids the teacher marked "this is wrong". */
   flagged: string[]
   /** Review plans the teacher approved or edited. */
@@ -38,7 +44,7 @@ type Saved = {
 }
 
 const STORE_KEY = 'compass.sampleData'
-const EMPTY: Saved = { topics: {}, flagged: [], plans: {} }
+const EMPTY: Saved = { topics: {}, confidence: {}, retries: {}, checks: {}, flagged: [], plans: {} }
 
 function load(): Saved {
   try {
@@ -268,5 +274,156 @@ export function useReviewPlans() {
   }, [])
 
   return { isSample: true as const, plans, waiting: plans.filter((p) => !p.approved), approve, saveSteps }
+}
+
+// ---------------------------------------------------------------------------
+// Students: confidence, topic progress, retry schedule, catch-up checks
+// ---------------------------------------------------------------------------
+
+/** How sure a student was of their answers on one quiz. */
+export function useConfidence(userId: string | undefined, quizId: string) {
+  const s = useSaved()
+  const key = `${userId ?? 'none'}:${quizId}`
+  const map = s.confidence[key] ?? {}
+  /**
+   * TODO(Mauricio): add a `confidence` column ('sure' | 'not_sure' | 'guessed') to quiz_responses and accept it in
+   * submit_quiz, so teachers' reports can count "sure but wrong" from real answers. Then drop this store.
+   */
+  const save = useCallback((next: Record<string, Confidence>) => update((st) => ({ ...st, confidence: { ...st.confidence, [key]: next } })), [key])
+  return { confidence: map, save, isSample: true as const }
+}
+
+export type TopicProgress = {
+  id: string
+  name: string
+  /** 0 to 1, one value per week, oldest first. The last one is now. */
+  weeks: number[]
+}
+
+const SAMPLE_PROGRESS: TopicProgress[] = [
+  { id: 'first-law', name: 'Newton’s first law', weeks: [0.5, 0.62, 0.74, 0.82] },
+  { id: 'free-body', name: 'Free-body diagrams', weeks: [0.35, 0.48, 0.6, 0.71] },
+  { id: 'second-law', name: 'Newton’s second law', weeks: [0.4, 0.5, 0.58, 0.64] },
+  { id: 'third-law', name: 'Newton’s third law', weeks: [0.42, 0.45, 0.44, 0.48] },
+]
+
+/** Plain words for a progress level. No grades, no rankings. */
+export function progressWords(level: number) {
+  if (level >= 0.8) return 'Solid'
+  if (level >= 0.6) return 'Getting there'
+  return 'Still learning'
+}
+
+/**
+ * How a student is doing on each topic over the last four weeks, plus the plain-words summary
+ * ("strong at", "keep working on", "getting better at"). Parents see the same summary.
+ * TODO(Mauricio): return each question's topic_id from my_quizzes / quiz_for_student (it's already in quiz_questions),
+ * then work this out per topic and week from quiz_responses. Same shape: { id, name, weeks: number[] }.
+ */
+export function useTopicProgress() {
+  return useMemo(() => {
+    const now = (t: TopicProgress) => t.weeks[t.weeks.length - 1]
+    const gain = (t: TopicProgress) => now(t) - t.weeks[0]
+    const byLevel = [...SAMPLE_PROGRESS].sort((a, b) => now(b) - now(a))
+    return {
+      isSample: true as const,
+      topics: SAMPLE_PROGRESS,
+      strongest: byLevel[0],
+      workingOn: byLevel[byLevel.length - 1],
+      improving: [...SAMPLE_PROGRESS].sort((a, b) => gain(b) - gain(a))[0],
+    }
+  }, [])
+}
+
+export type RetryState = {
+  /** YYYY-MM-DD the question is next due. */
+  due: string
+  /** Right answers in a row on retries. Two means it's learned. */
+  streak: number
+}
+
+const RETRY_FIRST_GAP = 2
+const RETRY_SECOND_GAP = 7
+export const RETRY_GOAL = 2
+
+function addDaysIso(iso: string, days: number) {
+  const [y, m, d] = iso.split('-').map(Number)
+  const date = new Date(y, m - 1, d + days)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+/**
+ * When each missed question comes back: 2 days after the miss, then 7 days after the first right retry,
+ * and it's done after two right retries in a row. A wrong retry starts it over at 2 days.
+ * TODO(Mauricio): add a `retry_schedule (student_id, question_id, due, streak)` table, write it in submit_quiz
+ * for wrong answers and in a new submit_retry function, and read it here.
+ */
+export function useRetrySchedule(userId: string | undefined) {
+  const s = useSaved()
+  const prefix = `${userId ?? 'none'}:`
+
+  /** The schedule for a question. Questions seen for the first time start 2 days from `missedOn`. */
+  const stateFor = useCallback(
+    (questionId: string, missedOn: string): RetryState => s.retries[prefix + questionId] ?? { due: addDaysIso(missedOn, RETRY_FIRST_GAP), streak: 0 },
+    [s.retries, prefix],
+  )
+
+  const record = useCallback(
+    (results: { questionId: string; right: boolean }[], today: string) => {
+      update((st) => {
+        const retries = { ...st.retries }
+        for (const r of results) {
+          const streak = r.right ? (retries[prefix + r.questionId]?.streak ?? 0) + 1 : 0
+          retries[prefix + r.questionId] = { streak, due: addDaysIso(today, r.right ? RETRY_SECOND_GAP : RETRY_FIRST_GAP) }
+        }
+        return { ...st, retries }
+      })
+    },
+    [prefix],
+  )
+
+  return { stateFor, record, isSample: true as const }
+}
+
+export type CheckQuestion = { id: string; text: string; options: string[]; answer: number; why: string }
+
+const CHECK_BANK: Record<string, CheckQuestion[]> = {
+  'first-law': [
+    { id: 'c-f1', text: 'A cart rolls at a steady speed on a smooth floor. Is there a net force on it?', options: ['Yes, or it would stop', 'No, the forces balance', 'Yes, pointing forward', 'Only gravity'], answer: 1, why: 'Steady speed in a straight line means the forces balance, so the net force is zero.' },
+    { id: 'c-f2', text: 'A hockey puck slides across ice and slowly stops. Why does it stop?', options: ['Its force runs out', 'Friction from the ice', 'Gravity pulls it back', 'Air pushes it forward'], answer: 1, why: 'A small friction force acts against the motion. Without it, the puck would keep sliding.' },
+    { id: 'c-f3', text: 'You are on a bus that brakes hard. Why do you lurch forward?', options: ['The bus pushes you', 'Your body keeps moving forward', 'Gravity changes direction', 'The seat pulls you'], answer: 1, why: 'Your body keeps moving at the old speed until something, like a seat belt, stops it.' },
+  ],
+  'free-body': [
+    { id: 'c-d1', text: 'A book rests on a table. Which forces belong on its free-body diagram?', options: ['Gravity only', 'Gravity and the table pushing up', 'The table pushing up only', 'Gravity and a forward push'], answer: 1, why: 'Gravity pulls down and the table pushes up with the same size force.' },
+    { id: 'c-d2', text: 'A ball is thrown straight up. Once it leaves your hand, which force acts on it?', options: ['An upward throwing force', 'Gravity only (ignoring air)', 'Gravity and an upward force', 'No force at the top'], answer: 1, why: 'After it leaves your hand, only gravity acts on it (ignoring air).' },
+    { id: 'c-d3', text: 'A box slides to the right and slows down. Which way does friction point?', options: ['Right', 'Left', 'Up', 'Down'], answer: 1, why: 'Friction points against the motion, so it points left.' },
+  ],
+  'second-law': [
+    { id: 'c-s1', text: 'The same push is given to an empty cart and a full cart. Which speeds up more?', options: ['The empty cart', 'The full cart', 'Both the same', 'Neither moves'], answer: 0, why: 'With the same force, less mass means more acceleration (F = ma).' },
+    { id: 'c-s2', text: 'A 2 kg ball has a net force of 10 N on it. What is its acceleration?', options: ['2 m/s²', '5 m/s²', '10 m/s²', '20 m/s²'], answer: 1, why: 'a = F ÷ m = 10 N ÷ 2 kg = 5 m/s².' },
+    { id: 'c-s3', text: 'You double the net force on a box. What happens to its acceleration?', options: ['It halves', 'It stays the same', 'It doubles', 'It goes up four times'], answer: 2, why: 'Acceleration grows in step with net force when the mass stays the same.' },
+  ],
+  'third-law': [
+    { id: 'c-t1', text: 'You push on a wall. What does the wall do?', options: ['Nothing', 'Pushes back on you just as hard', 'Pushes back a little less', 'Pulls you toward it'], answer: 1, why: 'Forces come in pairs: the wall pushes on you with the same size force.' },
+    { id: 'c-t2', text: 'Why don’t action and reaction forces cancel each other out?', options: ['They do cancel', 'They act on different objects', 'One is always bigger', 'They point the same way'], answer: 1, why: 'Each force in the pair acts on a different object, so they can’t cancel.' },
+    { id: 'c-t3', text: 'A swimmer pushes water backward. What moves the swimmer forward?', options: ['The water pushing on them', 'Their muscles alone', 'Gravity', 'The air above the water'], answer: 0, why: 'The swimmer pushes the water back, and the water pushes the swimmer forward.' },
+  ],
+}
+
+/**
+ * A 3-question catch-up check for a day the student missed, picked by matching the day's topic to a quiz topic.
+ * TODO(Mauricio): let generate-quiz write checks for students from the teacher's day topic (it only lets teachers in
+ * now), or have the teacher's app write one per day into a `catch_up_checks` table. Save scores there too.
+ */
+export function useCatchUpCheck(userId: string | undefined, day: string, topic: string) {
+  const s = useSaved()
+  const lower = topic.toLowerCase()
+  const match =
+    QUIZ_TOPICS.find((t) => lower && lower.includes(t.name.toLowerCase().replace('newton’s ', ''))) ??
+    (/(first|inertia)/.test(lower) ? QUIZ_TOPICS[0] : /(diagram|free)/.test(lower) ? QUIZ_TOPICS[1] : /(second|f ?= ?ma|accel)/.test(lower) ? QUIZ_TOPICS[2] : /(third|pair|reaction)/.test(lower) ? QUIZ_TOPICS[3] : QUIZ_TOPICS[0])
+  const key = `${userId ?? 'none'}:${day}`
+  const score = s.checks[key]
+  const saveScore = useCallback((right: number) => update((st) => ({ ...st, checks: { ...st.checks, [key]: right } })), [key])
+  return { isSample: true as const, topicName: match.name, questions: CHECK_BANK[match.id], score, saveScore }
 }
 

@@ -20,7 +20,12 @@ const TeacherReports = lazy(() => import('./pages/teacher/Reports'))
 const TeacherReport = lazy(() => import('./pages/teacher/Report'))
 const TeacherClass = lazy(() => import('./pages/teacher/Class'))
 const StudentHome = lazy(() => import('./pages/student/Home'))
+const StudentQuizzes = lazy(() => import('./pages/student/Quizzes'))
 const StudentQuiz = lazy(() => import('./pages/student/Quiz'))
+const StudentGaps = lazy(() => import('./pages/student/Gaps'))
+const StudentAttendance = lazy(() => import('./pages/student/Attendance'))
+const StudentRetry = lazy(() => import('./pages/student/Retry'))
+const StudentCheck = lazy(() => import('./pages/student/Check'))
 const AreaPlaceholder = lazy(() => import('./pages/AreaPlaceholder'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 
@@ -123,9 +128,11 @@ export default function App() {
         <Route path="/student" element={<Area role="student" nav={STUDENT_NAV} />}>
           <Route index element={<StudentHome />} />
           <Route path="quiz/:quizId" element={<StudentQuiz />} />
-          <Route path="quizzes" element={<AreaPlaceholder title="Quizzes" icon="quiz" home="/student" about="Your quizzes and when they’re due, one question at a time." />} />
-          <Route path="gaps" element={<AreaPlaceholder title="My gaps" icon="trending_up" home="/student" about="What you’re strong at, what to keep working on, and retry quizzes built from your mistakes." />} />
-          <Route path="attendance" element={<AreaPlaceholder title="Attendance" icon="calendar_month" home="/student" about="Your month at a glance, plus a short catch-up check for any day you missed." />} />
+          <Route path="quizzes" element={<StudentQuizzes />} />
+          <Route path="gaps" element={<StudentGaps />} />
+          <Route path="retry" element={<StudentRetry />} />
+          <Route path="attendance" element={<StudentAttendance />} />
+          <Route path="check/:day" element={<StudentCheck />} />
         </Route>
 
         <Route path="/parent" element={<Area role="parent" nav={PARENT_NAV} />}>

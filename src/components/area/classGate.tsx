@@ -7,7 +7,7 @@ import { Loading } from './AreaBits'
  * The class has to load before a teacher page can show anything. Returns a loading, error or
  * "no class" screen, or null when the page can go ahead.
  */
-export function useClassGate(extra?: { loading?: boolean; error?: string | null }) {
+export function useClassGate(extra?: { loading?: boolean; error?: string | null; student?: boolean }) {
   const { loading, error, cls } = useClassData()
   if (loading || extra?.loading) return <Loading />
   if (error || extra?.error) {
@@ -26,14 +26,16 @@ export function useClassGate(extra?: { loading?: boolean; error?: string | null 
         className="mt-10 max-w-xl"
         action={{ label: 'Reload', icon: 'refresh', onClick: () => window.location.reload() }}
       >
-        Your class is made when you sign up. If you just signed up, give it a moment and reload.
+        {extra?.student
+          ? 'You join a class with the code from your teacher when you sign up. If you just signed up, give it a moment and reload.'
+          : 'Your class is made when you sign up. If you just signed up, give it a moment and reload.'}
       </EmptyState>
     )
   }
   return null
 }
 
-/** "1 student", "3 students". */
+/** "1 student", "3 students", "2 classes". */
 export function plural(n: number, word: string) {
-  return `${n} ${n === 1 ? word : `${word}s`}`
+  return `${n} ${n === 1 ? word : /(s|sh|ch|x)$/.test(word) ? `${word}es` : `${word}s`}`
 }
