@@ -13,9 +13,12 @@ import { ROLE_HOME, type Role } from './lib/roles'
 import { useSession } from './lib/session'
 import { isSupabaseConfigured } from './lib/supabase'
 
-const TeacherOverview = lazy(() => import('./pages/teacher/Overview'))
+const TeacherHome = lazy(() => import('./pages/teacher/Home'))
 const TeacherAttendance = lazy(() => import('./pages/teacher/Attendance'))
 const TeacherQuizzes = lazy(() => import('./pages/teacher/Quizzes'))
+const TeacherReports = lazy(() => import('./pages/teacher/Reports'))
+const TeacherReport = lazy(() => import('./pages/teacher/Report'))
+const TeacherClass = lazy(() => import('./pages/teacher/Class'))
 const StudentHome = lazy(() => import('./pages/student/Home'))
 const StudentQuiz = lazy(() => import('./pages/student/Quiz'))
 const AreaPlaceholder = lazy(() => import('./pages/AreaPlaceholder'))
@@ -109,14 +112,12 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route path="/teacher" element={<Area role="teacher" nav={TEACHER_NAV} />}>
-          <Route index element={<TeacherOverview />} />
+          <Route index element={<TeacherHome />} />
           <Route path="attendance" element={<TeacherAttendance />} />
           <Route path="quizzes" element={<TeacherQuizzes />} />
-          <Route
-            path="reports"
-            element={<AreaPlaceholder title="Reports" icon="insights" home="/teacher" about="After a quiz, you’ll see the most common mix-ups, the answers behind them, and a short review plan to approve." />}
-          />
-          <Route path="class" element={<AreaPlaceholder title="Class" icon="groups" home="/teacher" about="Your class name, the join code for students, and your student list." />} />
+          <Route path="reports" element={<TeacherReports />} />
+          <Route path="reports/:quizId" element={<TeacherReport />} />
+          <Route path="class" element={<TeacherClass />} />
         </Route>
 
         <Route path="/student" element={<Area role="student" nav={STUDENT_NAV} />}>

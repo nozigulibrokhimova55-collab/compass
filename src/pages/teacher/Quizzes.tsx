@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useClassGate } from '../../components/area/classGate'
 import { Icon } from '../../components/Icon'
 import { useToast } from '../../components/Toast'
 import { BrowserWindow } from '../../components/ui/BrowserWindow'
@@ -7,94 +8,83 @@ import { Button } from '../../components/ui/Button'
 import { Chip } from '../../components/ui/Chip'
 import { Field, inputClass } from '../../components/ui/Field'
 import { Frame } from '../../components/ui/Frame'
-import { PageNotice } from '../../components/ui/PageNotice'
 import { SectionHeader } from '../../components/ui/SectionHeader'
 import { ShowcasePanel } from '../../components/ui/ShowcasePanel'
 import { StatementCard } from '../../components/ui/StatementCard'
 import { dueOptions } from '../../lib/attendance'
 import { useClassData } from '../../lib/classData'
-import { errorMessage, generateQuiz, publishQuiz } from '../../lib/db'
-import { QUESTION_BANK, QUIZZES, TOPICS, type Question } from '../../lib/sample'
+import { errorMessage, generateQuiz, publishQuiz, type QuizQuestionInput } from '../../lib/db'
+import { QUIZ_TOPICS } from '../../lib/sampleData'
 
-type Stage = 'setup' | 'review' | 'published'
-type Draft = Question & { uid: number; editing: boolean; custom?: boolean }
+type Stage = 'notes' | 'questions' | 'publish' | 'done'
+type Draft = QuizQuestionInput & { uid: number; editing: boolean; custom?: boolean }
 type Difficulty = 'gentle' | 'medium' | 'stretch'
 
-const COUNTS = [3, 4, 5]
+const COUNTS = [3, 5, 8]
 const DIFFICULTIES: { id: Difficulty; label: string }[] = [
   { id: 'gentle', label: 'Gentle' },
   { id: 'medium', label: 'Medium' },
   { id: 'stretch', label: 'Stretch' },
 ]
+const STEPS: { id: Exclude<Stage, 'done'>; label: string }[] = [
+  { id: 'notes', label: 'Notes' },
+  { id: 'questions', label: 'Questions' },
+  { id: 'publish', label: 'Review and publish' },
+]
 const SAMPLE_NOTES = `Newton’s first law: an object keeps doing what it’s doing (staying still, or moving at a steady speed in a straight line) unless a net force acts on it.
-Demo: air table puck vs. block on sandpaper. Friction is what slows things down.
+Air table puck vs. block on sandpaper: friction is what slows things down.
 Common mistake: thinking a moving object needs a constant push to keep moving.`
 
 let nextUid = 1
-
-/** Questions for a topic first, then from the other topics, skipping ones already used. */
-function pick(topicId: string, count: number, used: Set<string>) {
-  const pool = [...QUESTION_BANK.filter((q) => q.topicId === topicId), ...QUESTION_BANK.filter((q) => q.topicId !== topicId)]
-  return pool.filter((q) => !used.has(q.id)).slice(0, count)
-}
-
-const STEPS: { id: Stage; label: string }[] = [
-  { id: 'setup', label: 'Notes' },
-  { id: 'review', label: 'Review' },
-  { id: 'published', label: 'Publish' },
-]
+const toDrafts = (qs: QuizQuestionInput[]): Draft[] => qs.map((q) => ({ ...q, uid: nextUid++, editing: false }))
 
 export default function TeacherQuizzes() {
-  const notify = useToast()
-  const { isDemo, loading, error, cls, quizzes, reload } = useClassData()
-  const [params] = useSearchParams()
-  const fromLink = TOPICS.find((t) => t.id === params.get('topic'))?.id
+  const gate = useClassGate()
+  return gate ?? <QuizMaker />
+}
 
-  const [stage, setStage] = useState<Stage>('setup')
+function QuizMaker() {
+  const notify = useToast()
+  const { cls, quizzes, reload } = useClassData()
+  const [params] = useSearchParams()
+  const fromLink = QUIZ_TOPICS.find((t) => t.id === params.get('topic'))?.id
+
+  const [stage, setStage] = useState<Stage>('notes')
   const [notes, setNotes] = useState('')
   const [fileName, setFileName] = useState('')
-  const [topic, setTopic] = useState(fromLink ?? TOPICS[0].id)
-  const [count, setCount] = useState(4)
+  const [fileNote, setFileNote] = useState<string | null>(null)
+  const [topic, setTopic] = useState(fromLink ?? QUIZ_TOPICS[0].id)
+  const [count, setCount] = useState(5)
   const [difficulty, setDifficulty] = useState<Difficulty>('medium')
   const [generating, setGenerating] = useState(false)
   const [genError, setGenError] = useState<string | null>(null)
   const [swapping, setSwapping] = useState<number | null>(null)
-  const [fileNote, setFileNote] = useState<string | null>(null)
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [title, setTitle] = useState('')
   const dueChoices = useMemo(() => dueOptions(), [])
   const [due, setDue] = useState(dueChoices[0].value)
   const [checked, setChecked] = useState(false)
   const [publishing, setPublishing] = useState(false)
-  const reviewRef = useRef<HTMLDivElement>(null)
+  const stageHeading = useRef<HTMLHeadingElement>(null)
+  const doneRef = useRef<HTMLDivElement>(null)
+  const firstRender = useRef(true)
 
   useEffect(() => {
-    if (stage !== 'setup') reviewRef.current?.focus()
+    // Move focus to the new step's heading so keyboard and screen reader users land in the right place.
+    if (firstRender.current) {
+      firstRender.current = false
+      return
+    }
+    ;(stage === 'done' ? doneRef.current : stageHeading.current)?.focus()
   }, [stage])
 
-  if (loading) return <p className="pt-24 text-center font-inter text-[15px] text-navy">Loading…</p>
-  if (error) {
-    return (
-      <PageNotice label="error.frame" title="We couldn’t load your class" alert>
-        {error}
-      </PageNotice>
-    )
-  }
-  if (!cls) {
-    return (
-      <PageNotice label="class.frame" title="No class yet">
-        We couldn’t find a class for your account.
-      </PageNotice>
-    )
-  }
+  if (!cls) return null
 
-  const topicName = TOPICS.find((t) => t.id === topic)?.name ?? ''
-  // The demo only needs something to look at. Real questions are written from the notes themselves.
-  const canGenerate = (isDemo ? notes.trim().length > 0 || Boolean(fileName) : notes.trim().length > 0) && !generating
+  const topicName = QUIZ_TOPICS.find((t) => t.id === topic)?.name ?? ''
+  const canGenerate = notes.trim().length > 0 && !generating
   const editingAny = drafts.some((d) => d.editing)
   const dueLabel = dueChoices.find((d) => d.value === due)?.label ?? due
-  // In the demo, Quizzes 2 to 4 exist, so the new one is Quiz 5.
-  const nextNumber = isDemo ? QUIZZES.length + 2 : quizzes.length + 1
+  const stageIndex = STEPS.findIndex((s) => s.id === stage)
 
   const onFile = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -104,36 +94,20 @@ export default function TeacherQuizzes() {
     // Plain text files are read in. Other formats can't be read yet, so say so instead of pretending.
     if (/\.(txt|md)$/i.test(file.name)) {
       file.text().then((t) => setNotes(t.slice(0, 8000)))
-    } else if (!isDemo) {
-      setFileNote('We can only read .txt and .md files for now. Paste the text from your file into the box instead.')
+    } else {
+      setFileNote('We can only read .txt and .md files for now. Copy the text from your file into the box instead.')
     }
   }
-
-  const toDrafts = (qs: { topicId: string; text: string; options: string[]; answer: number; why: string }[]): Draft[] =>
-    qs.map((q) => {
-      const uid = nextUid++
-      return { ...q, id: `ai-${uid}`, uid, editing: false }
-    })
 
   const generate = async () => {
     setGenerating(true)
     setGenError(null)
-    if (isDemo) {
-      window.setTimeout(() => {
-        setDrafts(pick(topic, count, new Set()).map((q) => ({ ...q, uid: nextUid++, editing: false })))
-        setTitle(`Quiz ${nextNumber}: ${topicName}`)
-        setGenerating(false)
-        setChecked(false)
-        setStage('review')
-      }, 900)
-      return
-    }
     try {
       const qs = await generateQuiz({ notes, topicId: topic, count, difficulty })
       setDrafts(toDrafts(qs))
-      setTitle(`Quiz ${nextNumber}: ${topicName}`)
+      setTitle(`Quiz ${quizzes.length + 1}: ${topicName}`)
       setChecked(false)
-      setStage('review')
+      setStage('questions')
     } catch (err) {
       console.error('Could not write the questions', err)
       setGenError(errorMessage(err, 'We couldn’t write the questions. Try again.'))
@@ -148,43 +122,33 @@ export default function TeacherQuizzes() {
     notify('Question removed.', 'delete')
   }
   const regenerate = async (uid: number) => {
-    if (isDemo) {
-      const fresh = pick(topic, 1, new Set(drafts.map((d) => d.id)))[0]
-      if (!fresh) return notify('No more sample questions to swap in.', 'info')
-      setDrafts((ds) => ds.map((d) => (d.uid === uid ? { ...fresh, uid, editing: false } : d)))
-      notify('Swapped in a new question.', 'autorenew')
-      return
-    }
     setSwapping(uid)
     try {
       const [fresh] = await generateQuiz({ notes, topicId: topic, count: 1, difficulty, exclude: drafts.map((d) => d.text).filter(Boolean) })
-      setDrafts((ds) => ds.map((d) => (d.uid === uid ? { ...fresh, id: `ai-${uid}-${nextUid++}`, uid, editing: false } : d)))
-      notify('Swapped in a new question.', 'autorenew')
+      setDrafts((ds) => ds.map((d) => (d.uid === uid ? { ...fresh, uid, editing: false } : d)))
+      notify('Here’s a new version of that question.', 'autorenew')
     } catch (err) {
-      console.error('Could not swap the question', err)
-      notify(errorMessage(err, 'We couldn’t write a new question. Try again.'), 'error')
+      console.error('Could not write a new version', err)
+      notify(errorMessage(err, 'We couldn’t write a new version. Try again.'), 'error')
     } finally {
       setSwapping(null)
     }
   }
-  const addOwn = () =>
-    setDrafts((ds) => [...ds, { id: `own-${nextUid}`, uid: nextUid++, topicId: topic, text: '', options: ['', '', '', ''], answer: 0, why: '', editing: true, custom: true }])
+  const addOwn = () => setDrafts((ds) => [...ds, { uid: nextUid++, topicId: topic, text: '', options: ['', '', '', ''], answer: 0, why: '', editing: true, custom: true }])
 
   const publish = async () => {
     setPublishing(true)
     try {
-      if (!isDemo) {
-        await publishQuiz({
-          classId: cls.id,
-          title: title.trim(),
-          topicId: topic,
-          dueDate: due,
-          questions: drafts.map((d) => ({ topicId: d.topicId, text: d.text, options: d.options, answer: d.answer, why: d.why })),
-        })
-        await reload()
-      }
-      setStage('published')
-      notify(`${title.trim()} is saved for ${cls.name}.`)
+      await publishQuiz({
+        classId: cls.id,
+        title: title.trim(),
+        topicId: topic,
+        dueDate: due,
+        questions: drafts.map((d) => ({ topicId: d.topicId, text: d.text, options: d.options, answer: d.answer, why: d.why })),
+      })
+      await reload()
+      setStage('done')
+      notify(`${title.trim()} is live for ${cls.name}.`)
     } catch (err) {
       console.error('Could not publish the quiz', err)
       notify(errorMessage(err, 'We couldn’t publish the quiz. Try again.'), 'error')
@@ -193,33 +157,40 @@ export default function TeacherQuizzes() {
     }
   }
   const restart = () => {
-    setStage('setup')
+    setStage('notes')
     setDrafts([])
     setChecked(false)
   }
 
-  const stageIndex = STEPS.findIndex((s) => s.id === stage)
+  const heading = (text: string) => (
+    <h2 ref={stageHeading} tabIndex={-1} className="font-grotesk text-[26px] font-extrabold tracking-[-0.02em] outline-none">
+      {text}
+    </h2>
+  )
 
   return (
     <>
       <SectionHeader as="h1" size="sm" align="left" script="fresh from your notes" title="Make a quiz" />
 
-      <ol className="mt-8 flex flex-wrap gap-2" aria-label="Steps">
-        {STEPS.map((s, i) => (
-          <li
-            key={s.id}
-            aria-current={i === stageIndex ? 'step' : undefined}
-            className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] ${
-              i === stageIndex ? 'bg-navy text-white' : i < stageIndex ? 'bg-white text-navy' : 'bg-white/70 text-navy-soft'
-            }`}
-          >
-            {i < stageIndex ? <Icon name="check" className="text-[16px]" /> : <span>0{i + 1}</span>}
-            {s.label}
-          </li>
-        ))}
-      </ol>
+      {stage !== 'done' && (
+        <ol className="mt-8 flex flex-wrap gap-2" aria-label="Steps">
+          {STEPS.map((s, i) => (
+            <li
+              key={s.id}
+              aria-current={i === stageIndex ? 'step' : undefined}
+              className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] ${
+                i === stageIndex ? 'bg-navy text-white' : i < stageIndex ? 'bg-white text-navy' : 'bg-white/80 text-navy-soft'
+              }`}
+            >
+              {i < stageIndex ? <Icon name="check" className="text-[16px]" /> : <span>0{i + 1}</span>}
+              {s.label}
+            </li>
+          ))}
+        </ol>
+      )}
 
-      {stage === 'setup' && (
+      {/* Step 1: notes and settings */}
+      {stage === 'notes' && (
         <ShowcasePanel
           as="h2"
           number={1}
@@ -228,12 +199,12 @@ export default function TeacherQuizzes() {
           className="step-in mt-8"
           text={
             <>
-              <p>Paste what you taught or upload a file. Pick a topic, how many questions, and how hard. You’ll check every question before students see anything.</p>
+              <p>Paste what you taught, or upload a text file. Pick a topic, how many questions, and how hard. You check every question before students see anything.</p>
               <p className="mt-4 flex items-start gap-2 rounded-xl bg-note px-4 py-3 font-inter text-[15px] leading-6 text-navy">
-                <Icon name="science" className="mt-0.5 text-[20px]" />
-                {isDemo
-                  ? 'In this demo, questions come from a small sample set about Newton’s laws.'
-                  : 'Gemini writes the questions from your notes. Your notes are sent to Google to do that. Nothing else about your class is.'}
+                <span className="mt-0.5 text-[#6B3F0E]">
+                  <Icon name="info" className="text-[20px]" />
+                </span>
+                Gemini writes the questions from your notes, so your notes are sent to Google. Nothing else about your class is.
               </p>
             </>
           }
@@ -243,7 +214,7 @@ export default function TeacherQuizzes() {
               <textarea
                 id="quiz-notes"
                 aria-describedby="quiz-notes-hint"
-                rows={6}
+                rows={7}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Paste your notes here"
@@ -257,25 +228,25 @@ export default function TeacherQuizzes() {
                 <input type="file" accept=".txt,.md,.pdf,.doc,.docx" onChange={onFile} className="sr-only" />
               </label>
               <button type="button" onClick={() => setNotes(SAMPLE_NOTES)} className="min-h-11 cursor-pointer px-1 font-inter text-[15px] font-semibold text-accent-strong underline-offset-4 hover:underline">
-                Use sample notes
+                Try sample notes
               </button>
-              {fileNote && (
-                <p role="status" className="basis-full font-inter text-[14px] text-navy">
-                  {fileNote}
-                </p>
-              )}
               {fileName && (
                 <span className="inline-flex items-center gap-1.5 rounded-lg border border-card-line bg-white px-2.5 py-1.5 font-mono text-[12px]">
                   <Icon name="description" className="text-[16px] text-select" />
                   {fileName}
                 </span>
               )}
+              {fileNote && (
+                <p role="status" className="basis-full font-inter text-[14px] text-navy">
+                  {fileNote}
+                </p>
+              )}
             </div>
 
             <fieldset>
               <legend className="mb-2 font-inter text-[15px] font-semibold">Topic</legend>
               <div className="flex flex-wrap gap-2">
-                {TOPICS.map((t) => (
+                {QUIZ_TOPICS.map((t) => (
                   <Chip key={t.id} selected={topic === t.id} onClick={() => setTopic(t.id)}>
                     {t.name}
                   </Chip>
@@ -307,7 +278,8 @@ export default function TeacherQuizzes() {
             </div>
 
             {genError && (
-              <p role="alert" className="rounded-xl border-2 border-accent-strong bg-white/85 px-4 py-3 font-inter text-[15px]">
+              <p role="alert" className="flex items-start gap-2 rounded-xl bg-[#FBE1D8] px-4 py-3 font-inter text-[15px] leading-6 text-[#9C3412]">
+                <Icon name="error" className="mt-0.5 text-[20px]" />
                 {genError}
               </p>
             )}
@@ -315,20 +287,21 @@ export default function TeacherQuizzes() {
               <Button variant="orange" size="lg" icon={generating ? undefined : 'auto_awesome'} onClick={generate} disabled={!canGenerate}>
                 {generating ? 'Writing questions…' : 'Make questions'}
               </Button>
-              {!notes.trim() && (isDemo ? !fileName : true) && <p className="font-inter text-[14px] text-navy-soft">Add notes or a file first.</p>}
+              {!notes.trim() && <p className="font-inter text-[14px] text-navy-soft">Add your notes first.</p>}
             </div>
           </div>
         </ShowcasePanel>
       )}
 
-      {stage === 'review' && (
+      {/* Step 2: check, edit, swap, delete, add */}
+      {stage === 'questions' && (
         <div className="step-in mt-8">
-          <div ref={reviewRef} tabIndex={-1} className="flex flex-col gap-4 rounded-3xl bg-white/90 p-5 outline-none backdrop-blur-sm md:flex-row md:items-center md:justify-between md:p-6">
+          <div className="flex flex-col gap-3 rounded-3xl bg-white/90 p-5 backdrop-blur-sm md:flex-row md:items-center md:justify-between md:p-6">
             <div>
-              <h2 className="font-grotesk text-[26px] font-extrabold tracking-[-0.02em]">Check every question</h2>
+              {heading('Check every question')}
               <p className="mt-1 flex items-center gap-2 font-inter text-[15px] text-navy">
                 <Icon name="lock" className="text-[18px] text-accent-strong" />
-                Draft. Students can’t see this quiz until you publish it.
+                Draft. Students can’t see anything until you publish.
               </p>
             </div>
             <p className="font-mono text-[12px] uppercase tracking-[0.12em] text-navy-soft">
@@ -336,114 +309,124 @@ export default function TeacherQuizzes() {
             </p>
           </div>
 
-          <ol className="mt-6 flex flex-col gap-6">
-            {drafts.map((d, i) => (
-              <li key={d.uid}>
-                <QuestionFrame
-                  key={`${d.id}-${d.editing}`}
-                  number={i + 1}
-                  draft={d}
-                  onEdit={() => update(d.uid, { editing: true })}
-                  onSave={(patch) => update(d.uid, { ...patch, editing: false, custom: false })}
-                  onCancel={() => (d.custom ? setDrafts((ds) => ds.filter((x) => x.uid !== d.uid)) : update(d.uid, { editing: false }))}
-                  onRegenerate={() => regenerate(d.uid)}
-                  busy={swapping === d.uid}
-                  onDelete={() => remove(d.uid)}
-                />
-              </li>
-            ))}
-          </ol>
+          {drafts.length === 0 ? (
+            <p className="mt-6 rounded-2xl bg-white/90 p-5 font-inter text-[16px] leading-7 text-navy">No questions left. Add your own, or go back and make a new set.</p>
+          ) : (
+            <ol className="mt-6 flex flex-col gap-6">
+              {drafts.map((d, i) => (
+                <li key={d.uid}>
+                  <QuestionFrame
+                    key={`${d.uid}-${d.editing}-${d.text}`}
+                    number={i + 1}
+                    draft={d}
+                    onEdit={() => update(d.uid, { editing: true })}
+                    onSave={(patch) => update(d.uid, { ...patch, editing: false, custom: false })}
+                    onCancel={() => (d.custom ? setDrafts((ds) => ds.filter((x) => x.uid !== d.uid)) : update(d.uid, { editing: false }))}
+                    onRegenerate={() => regenerate(d.uid)}
+                    busy={swapping === d.uid}
+                    onDelete={() => remove(d.uid)}
+                  />
+                </li>
+              ))}
+            </ol>
+          )}
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-6 flex flex-col gap-4 rounded-3xl bg-white/90 p-5 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between md:p-6">
             <div className="flex flex-wrap gap-3">
               <Button variant="outline" icon="add" onClick={addOwn}>
                 Add your own question
               </Button>
-              <Button variant="outline" icon="tune" onClick={() => setStage('setup')}>
-                Change settings
+              <Button variant="outline" icon="arrow_back" onClick={() => setStage('notes')}>
+                Back to notes
               </Button>
             </div>
+            <div className="flex flex-col items-start gap-1 sm:items-end">
+              <Button variant="navy" icon="arrow_forward" onClick={() => setStage('publish')} disabled={editingAny || drafts.length === 0}>
+                Next: review and publish
+              </Button>
+              {editingAny && <p className="font-inter text-[14px] text-navy-soft">Save or cancel the question you’re editing first.</p>}
+            </div>
           </div>
-
-          <ShowcasePanel
-            as="h2"
-            number={3}
-            title="Review and"
-            highlight="publish"
-            className="mt-12"
-            text={
-              <div className="flex flex-col gap-5">
-                <Field id="quiz-title" label="Quiz name">
-                  <input id="quiz-title" value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
-                </Field>
-                <fieldset>
-                  <legend className="mb-2 font-inter text-[15px] font-semibold">Due</legend>
-                  <div className="flex flex-wrap gap-2">
-                    {dueChoices.map((choice) => (
-                      <Chip key={choice.value} icon="event" selected={due === choice.value} onClick={() => setDue(choice.value)}>
-                        {choice.label}
-                      </Chip>
-                    ))}
-                  </div>
-                </fieldset>
-                <label className="flex min-h-11 cursor-pointer items-start gap-3 font-inter text-[15px] leading-6">
-                  <input type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#161B26]" />
-                  I’ve read every question and the answers are right.
-                </label>
-                <div>
-                  <Button variant="orange" size="lg" icon={publishing ? undefined : 'send'} onClick={publish} disabled={!checked || editingAny || drafts.length === 0 || !title.trim() || publishing}>
-                    {publishing ? 'Publishing…' : `Publish to ${cls.name}`}
-                  </Button>
-                  {(editingAny || drafts.length === 0) && (
-                    <p className="mt-2 font-inter text-[14px] text-navy-soft">{drafts.length === 0 ? 'Add at least one question first.' : 'Save or cancel the question you’re editing first.'}</p>
-                  )}
-                </div>
-              </div>
-            }
-          >
-            <BrowserWindow url="compass.app/student/quiz">
-              <div className="rounded-xl border border-card-line bg-white p-4">
-                <p className="font-mono text-[12px] uppercase tracking-[0.12em] text-navy-soft">What students will see · Due {dueLabel}</p>
-                <p className="mt-2 font-grotesk text-[20px] font-extrabold leading-6 tracking-[-0.01em]">{title || 'Untitled quiz'}</p>
-                <p className="mt-1 font-inter text-[14px] text-navy-soft">{drafts.length} questions · one at a time</p>
-                {drafts[0] && (
-                  <div className="mt-4 rounded-lg bg-[#F6F9FD] p-3">
-                    <p className="font-inter text-[15px] font-semibold leading-6">1. {drafts[0].text || 'Your question'}</p>
-                    <ul className="mt-2 flex flex-col gap-1.5">
-                      {drafts[0].options.filter(Boolean).map((o) => (
-                        <li key={o} className="flex items-center gap-2 rounded-md border border-card-line bg-white px-2.5 py-1.5 font-inter text-[14px]">
-                          <Icon name="radio_button_unchecked" className="text-[16px] text-navy-soft" />
-                          {o}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </BrowserWindow>
-          </ShowcasePanel>
         </div>
       )}
 
-      {stage === 'published' && (
-        <div ref={reviewRef} tabIndex={-1} className="step-in mt-8 grid gap-6 outline-none lg:grid-cols-[1.4fr_1fr]">
-          <StatementCard
-            as="h2"
-            title={isDemo ? `${title} is live for` : `${title} is live for`}
-            highlight={`${cls.name}.`}
-            footer={[`${drafts.length} questions`, `Due ${dueLabel}`]}
-          >
+      {/* Step 3: name, due date, preview, confirm */}
+      {stage === 'publish' && (
+        <ShowcasePanel
+          as="h2"
+          number={3}
+          title="Review and"
+          highlight="publish"
+          className="step-in mt-8"
+          text={
+            <div className="flex flex-col gap-5">
+              {heading(`${drafts.length} questions for ${cls.name}`)}
+              <Field id="quiz-title" label="Quiz name">
+                <input id="quiz-title" value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
+              </Field>
+              <fieldset>
+                <legend className="mb-2 font-inter text-[15px] font-semibold">Due</legend>
+                <div className="flex flex-wrap gap-2">
+                  {dueChoices.map((choice) => (
+                    <Chip key={choice.value} icon="event" selected={due === choice.value} onClick={() => setDue(choice.value)}>
+                      {choice.label}
+                    </Chip>
+                  ))}
+                </div>
+              </fieldset>
+              <label className="flex min-h-11 cursor-pointer items-start gap-3 font-inter text-[15px] leading-6">
+                <input type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#161B26]" />
+                I’ve read every question, and the right answers are marked correctly.
+              </label>
+              <div className="flex flex-wrap gap-3">
+                <Button variant="orange" size="lg" icon={publishing ? undefined : 'send'} onClick={publish} disabled={!checked || !title.trim() || publishing}>
+                  {publishing ? 'Publishing…' : 'Publish'}
+                </Button>
+                <Button variant="outline" size="lg" icon="arrow_back" onClick={() => setStage('questions')}>
+                  Back to questions
+                </Button>
+              </div>
+            </div>
+          }
+        >
+          <BrowserWindow url="compass.app/student/quiz">
+            <div className="rounded-xl border border-card-line bg-white p-4">
+              <p className="font-mono text-[12px] uppercase tracking-[0.12em] text-navy-soft">What students see · Due {dueLabel}</p>
+              <p className="mt-2 font-grotesk text-[20px] font-extrabold leading-6 tracking-[-0.01em]">{title || 'Untitled quiz'}</p>
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#EEF4FB]" aria-hidden="true">
+                <div className="h-full rounded-full bg-accent-strong" style={{ width: `${100 / Math.max(drafts.length, 1)}%` }} />
+              </div>
+              <p className="mt-1.5 font-inter text-[13px] text-navy-soft">Question 1 of {drafts.length}</p>
+              {drafts[0] && (
+                <div className="mt-3 rounded-lg bg-[#F6F9FD] p-3">
+                  <p className="font-inter text-[15px] font-semibold leading-6">{drafts[0].text}</p>
+                  <ul className="mt-2 flex flex-col gap-1.5">
+                    {drafts[0].options.map((o, i) => (
+                      <li key={i} className="flex items-center gap-2 rounded-md border border-card-line bg-white px-2.5 py-2 font-inter text-[14px]">
+                        <Icon name="radio_button_unchecked" className="text-[16px] text-navy-soft" />
+                        {o}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </BrowserWindow>
+        </ShowcasePanel>
+      )}
+
+      {stage === 'done' && (
+        <div ref={doneRef} tabIndex={-1} className="step-in mt-10 grid gap-6 outline-none lg:grid-cols-[1.4fr_1fr]">
+          <StatementCard as="h2" title={`${title.trim()} is live for`} highlight={`${cls.name}.`} footer={[`${drafts.length} questions`, `Due ${dueLabel}`]}>
             <p>
-              {isDemo
-                ? 'Students will see it in their quiz list. You’ll get a summary of what they found tricky once a few have finished.'
-                : 'Your students can take it from their Quizzes page now. You will see their scores on your Overview.'}
+              Students can take it from their Quizzes page now. Once they finish, you’ll see the report under Reports.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button variant="navy" icon="add" onClick={restart}>
                 Make another quiz
               </Button>
-              <Button variant="outline" to="/teacher">
-                Back to overview
+              <Button variant="outline" to="/teacher/reports">
+                Go to reports
               </Button>
             </div>
           </StatementCard>
@@ -465,23 +448,22 @@ type QuestionFrameProps = {
   busy?: boolean
 }
 
-/** One generated question in a frame: read view with actions, or an inline editor. */
+/** One question in a `q01.frame`: read view with Edit, New version and Delete, or an inline editor. */
 function QuestionFrame({ number, draft, onEdit, onSave, onCancel, onRegenerate, onDelete, busy }: QuestionFrameProps) {
   const [text, setText] = useState(draft.text)
-  const [options, setOptions] = useState(draft.options)
+  const [options, setOptions] = useState(draft.options.length >= 2 ? draft.options : ['', '', '', ''])
   const [answer, setAnswer] = useState(draft.answer)
   const [why, setWhy] = useState(draft.why)
   const [error, setError] = useState('')
   const label = `q${String(number).padStart(2, '0')}.frame`
   const base = `q-${draft.uid}`
-  // The parent keys this component by question and edit state, so the editor starts fresh each time.
 
   if (draft.editing) {
     const save = () => {
       const filled = options.map((o) => o.trim())
       if (!text.trim()) return setError('Write the question first.')
       if (filled.filter(Boolean).length < 2) return setError('Add at least two answer choices.')
-      if (!filled[answer]) return setError('Pick a choice that has text as the right answer.')
+      if (!filled[answer]) return setError('The right answer needs some text.')
       onSave({ text: text.trim(), options: filled.filter(Boolean), answer: filled.slice(0, answer).filter(Boolean).length, why: why.trim() })
     }
     return (
@@ -491,7 +473,7 @@ function QuestionFrame({ number, draft, onEdit, onSave, onCancel, onRegenerate, 
             <textarea id={`${base}-text`} rows={2} value={text} onChange={(e) => setText(e.target.value)} className={`${inputClass} resize-y py-3 leading-6`} />
           </Field>
           <fieldset>
-            <legend className="mb-2 font-inter text-[15px] font-semibold">Answer choices (pick the right one)</legend>
+            <legend className="mb-2 font-inter text-[15px] font-semibold">Answer choices (tick the right one)</legend>
             <div className="flex flex-col gap-2">
               {options.map((o, i) => (
                 <div key={i} className="flex items-center gap-3">
@@ -514,7 +496,7 @@ function QuestionFrame({ number, draft, onEdit, onSave, onCancel, onRegenerate, 
               ))}
             </div>
           </fieldset>
-          <Field id={`${base}-why`} label="Why it’s right (shown after students answer)">
+          <Field id={`${base}-why`} label="Why it’s right (students see this after answering)">
             <textarea id={`${base}-why`} rows={2} value={why} onChange={(e) => setWhy(e.target.value)} className={`${inputClass} resize-y py-3 leading-6`} />
           </Field>
           {error && (
@@ -537,7 +519,7 @@ function QuestionFrame({ number, draft, onEdit, onSave, onCancel, onRegenerate, 
   }
 
   const action =
-    'inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full px-3 font-inter text-[14px] font-semibold text-navy transition-colors hover:bg-[#EEF4FB] active:scale-[0.96]'
+    'inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full px-3 font-inter text-[14px] font-semibold text-navy transition-colors hover:bg-[#EEF4FB] active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-50'
   return (
     <Frame label={label} bodyClassName="p-5 md:p-7">
       <p className="font-inter text-[17px] font-semibold leading-7">
@@ -570,7 +552,7 @@ function QuestionFrame({ number, draft, onEdit, onSave, onCancel, onRegenerate, 
           <Icon name="edit" className="text-[18px]" />
           Edit
         </button>
-        <button type="button" onClick={onRegenerate} disabled={busy} className={`${action} disabled:cursor-not-allowed disabled:opacity-50`}>
+        <button type="button" onClick={onRegenerate} disabled={busy} className={action}>
           <Icon name="autorenew" className="text-[18px]" />
           {busy ? 'Writing…' : 'New version'}
         </button>
