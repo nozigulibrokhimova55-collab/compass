@@ -12,6 +12,14 @@ Vite, React, TypeScript, Tailwind 3, React Router and Supabase, for high school 
 - Only the anon key goes in `.env.local`. Never use or commit the `service_role` key.
 - Real accounts start empty: no sample misconceptions, scores or students. Show a short empty state instead of fake numbers.
 
+## Syllabus calendar (in progress, stage 1 of 4)
+
+- Books: `src/data/books/<id>/syllabus.json` plus one entry in `BOOKS` (`src/lib/books.ts`). `leadingPages` is how many pages each chapter PDF has before its first printed page (Conceptual Physics: 2, a blank page and the license). Chapter PDFs live in the private Storage bucket `course-materials` at `<book id>/<file>`; upload them with `npm run seed:materials -- <folder>` (service role key, also links the book to Elena Markovic's Physics class).
+- Every quiz or page made from a book shows `BookAttribution` (the syllabus `attribution`). Quizzes use section text only, never images.
+- Tables: `supabase/migrations/20261106000001_syllabus_calendar.sql` (`course_materials`, `class_schedules`, `class_sessions`, the `save_class_calendar` function, the bucket's read rule). Run it in the SQL Editor after `schema.sql`. Queries live in `src/lib/courseDb.ts` (not `db.ts`); pages load through `useCourse(classId)`.
+- `src/lib/schedulePlan.ts` is the pure planner: one session per class day, each section takes its `suggested_classes` (one each when squeezed), a chapter quiz after each chapter, spare days become "Review / flexible". Past sessions never change (enforced by row level security).
+- `/teacher/class/:id/materials` (pick or view the book, chapters, sections, pages, PDF links) and `/teacher/class/:id/schedule` (setup form, chapter picker, "Build my calendar", fixes when short, save).
+
 ## Design system: "Sky canvas" (whole site)
 
 Visual reference: ohhmydesign.com (match the look, never copy its text, images or code). A bright sky with slow clouds, white cards, dark navy cards for contrast, beige sticky notes, and design-tool touches: folder-tab frames, blue selection outlines with square handles, mono labels, ruler ticks. Every page is being moved to this system in stages (1 components and footer, 2 login/signup/role, 3 teacher, 4 student (done), 5 parent). The old `/app` workspace is retired and `/app/*` redirects to `/teacher`; the older "Warm Editorial Pedagogy" tokens (`primary`, `surface-*`, etc.) are still in `tailwind.config.js` but no page uses them for layout anymore. The old weekly family notes (`ParentUpdate.tsx`) are in git history (commit b2e7e9f) for Stage 5.

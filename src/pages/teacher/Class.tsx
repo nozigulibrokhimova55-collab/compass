@@ -54,6 +54,26 @@ function ClassBody() {
         </div>
       </div>
 
+      <section aria-labelledby="course" className="mt-16">
+        <BlockTitle id="course">Course</BlockTitle>
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
+          <Frame label="materials.frame" className="h-full" bodyClassName="flex h-full flex-col gap-3 p-6">
+            <h2 className="font-grotesk text-[20px] font-extrabold tracking-[-0.01em]">Course materials</h2>
+            <p className="font-inter text-[15px] leading-6 text-navy-soft">The textbook this class follows, its chapters and pages.</p>
+            <Button to={`/teacher/class/${cls.id}/materials`} variant="outline" icon="menu_book" className="mt-auto w-fit">
+              Open course materials
+            </Button>
+          </Frame>
+          <Frame label="schedule.frame" className="h-full" bodyClassName="flex h-full flex-col gap-3 p-6">
+            <h2 className="font-grotesk text-[20px] font-extrabold tracking-[-0.01em]">Schedule</h2>
+            <p className="font-inter text-[15px] leading-6 text-navy-soft">Class days, days off, and which section you teach each class.</p>
+            <Button to={`/teacher/class/${cls.id}/schedule`} variant="orange" icon="calendar_month" className="mt-auto w-fit">
+              Set up the schedule
+            </Button>
+          </Frame>
+        </div>
+      </section>
+
       <section aria-labelledby="roster" className="mt-16">
         <BlockTitle id="roster">{`Students · ${students.length}`}</BlockTitle>
         {students.length === 0 ? (

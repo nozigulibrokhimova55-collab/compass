@@ -19,6 +19,8 @@ const TeacherQuizzes = lazy(() => import('./pages/teacher/Quizzes'))
 const TeacherReports = lazy(() => import('./pages/teacher/Reports'))
 const TeacherReport = lazy(() => import('./pages/teacher/Report'))
 const TeacherClass = lazy(() => import('./pages/teacher/Class'))
+const TeacherMaterials = lazy(() => import('./pages/teacher/Materials'))
+const TeacherSchedule = lazy(() => import('./pages/teacher/Schedule'))
 const StudentHome = lazy(() => import('./pages/student/Home'))
 const StudentQuizzes = lazy(() => import('./pages/student/Quizzes'))
 const StudentQuiz = lazy(() => import('./pages/student/Quiz'))
@@ -126,6 +128,8 @@ export default function App() {
           <Route path="reports" element={<TeacherReports />} />
           <Route path="reports/:quizId" element={<TeacherReport />} />
           <Route path="class" element={<TeacherClass />} />
+          <Route path="class/:id/materials" element={<TeacherMaterials />} />
+          <Route path="class/:id/schedule" element={<TeacherSchedule />} />
         </Route>
 
         <Route path="/student" element={<Area role="student" nav={STUDENT_NAV} />}>
