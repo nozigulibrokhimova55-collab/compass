@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Test account logins written by npm run seed:accounts (contains passwords)
+test-accounts.local.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
