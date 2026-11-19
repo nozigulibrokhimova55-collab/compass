@@ -1,6 +1,7 @@
 import { SampleTag } from '../../components/area/AreaBits'
 import { Bento, BentoItem } from '../../components/area/Bento'
 import { plural, useClassGate } from '../../components/area/classGate'
+import { ViewerCalendar } from '../../components/course/ViewerCalendar'
 import { FamilyCard } from '../../components/student/FamilyCard'
 import { dueText } from '../../components/student/format'
 import { Button } from '../../components/ui/Button'
@@ -12,6 +13,7 @@ import { StickyNote } from '../../components/ui/StickyNote'
 import { useClassData } from '../../lib/classData'
 import { useTopicProgress } from '../../lib/sampleData'
 import { useSession } from '../../lib/session'
+import { useMyCalendars } from '../../lib/useCalendars'
 import { useMistakes } from '../../lib/useMistakes'
 import { useMyAttendance } from '../../lib/useMyAttendance'
 import { useToday } from '../../lib/useToday'
@@ -31,6 +33,7 @@ function HomeBody() {
   const month = useMyAttendance(now.getFullYear(), now.getMonth())
   const retries = useMistakes()
   const { improving } = useTopicProgress()
+  const { calendars } = useMyCalendars()
   const monthName = now.toLocaleDateString('en-US', { month: 'long' })
 
   const next = studentQuizzes.filter((q) => !q.finished).sort((a, b) => (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999'))[0]
@@ -41,7 +44,11 @@ function HomeBody() {
       <SectionHeader as="h1" size="sm" align="left" script="hey there" title={`Hi, ${firstName(user.name)}`} />
       {cls && <p className="mt-4 w-fit rounded-full bg-white/85 px-3 py-1 font-inter text-[15px] text-navy backdrop-blur-sm">You’re in {cls.name}</p>}
 
-      <Bento className="mt-8">
+      {calendars.map((c) => (
+        <ViewerCalendar key={c.classId} calendar={c} heading={`${c.className ?? 'Class'} · today and next`} summary calendarLink="/student/calendar" />
+      ))}
+
+      <Bento className={calendars.length > 0 ? 'mt-14' : 'mt-8'}>
         {/* Next quiz */}
         <BentoItem span={4}>
           {next ? (

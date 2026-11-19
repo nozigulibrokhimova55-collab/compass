@@ -21,6 +21,7 @@ const TeacherReport = lazy(() => import('./pages/teacher/Report'))
 const TeacherClass = lazy(() => import('./pages/teacher/Class'))
 const TeacherMaterials = lazy(() => import('./pages/teacher/Materials'))
 const TeacherSchedule = lazy(() => import('./pages/teacher/Schedule'))
+const TeacherCalendar = lazy(() => import('./pages/teacher/Calendar'))
 const StudentHome = lazy(() => import('./pages/student/Home'))
 const StudentQuizzes = lazy(() => import('./pages/student/Quizzes'))
 const StudentQuiz = lazy(() => import('./pages/student/Quiz'))
@@ -28,10 +29,12 @@ const StudentGaps = lazy(() => import('./pages/student/Gaps'))
 const StudentAttendance = lazy(() => import('./pages/student/Attendance'))
 const StudentRetry = lazy(() => import('./pages/student/Retry'))
 const StudentCheck = lazy(() => import('./pages/student/Check'))
+const StudentCalendar = lazy(() => import('./pages/student/Calendar'))
 const ParentHome = lazy(() => import('./pages/parent/Home'))
 const ParentProgress = lazy(() => import('./pages/parent/Progress'))
 const ParentMessages = lazy(() => import('./pages/parent/Messages'))
 const ParentSettings = lazy(() => import('./pages/parent/Settings'))
+const ParentCalendar = lazy(() => import('./pages/parent/Calendar'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 
 const TEACHER_NAV: AreaNavItem[] = [
@@ -45,12 +48,14 @@ const TEACHER_NAV: AreaNavItem[] = [
 const STUDENT_NAV: AreaNavItem[] = [
   { to: '/student', label: 'Home', icon: 'home', end: true },
   { to: '/student/quizzes', label: 'Quizzes', icon: 'quiz' },
+  { to: '/student/calendar', label: 'Calendar', icon: 'event_note' },
   { to: '/student/gaps', label: 'My gaps', icon: 'trending_up' },
   { to: '/student/attendance', label: 'Attendance', icon: 'calendar_month' },
 ]
 
 const PARENT_NAV: AreaNavItem[] = [
   { to: '/parent', label: 'Home', icon: 'home', end: true },
+  { to: '/parent/calendar', label: 'Calendar', icon: 'event_note' },
   { to: '/parent/progress', label: 'Progress', icon: 'trending_up' },
   { to: '/parent/messages', label: 'Messages', icon: 'forum' },
   { to: '/parent/settings', label: 'Settings', icon: 'settings' },
@@ -130,6 +135,7 @@ export default function App() {
           <Route path="class" element={<TeacherClass />} />
           <Route path="class/:id/materials" element={<TeacherMaterials />} />
           <Route path="class/:id/schedule" element={<TeacherSchedule />} />
+          <Route path="class/:id/calendar" element={<TeacherCalendar />} />
         </Route>
 
         <Route path="/student" element={<Area role="student" nav={STUDENT_NAV} />}>
@@ -140,6 +146,7 @@ export default function App() {
           <Route path="retry" element={<StudentRetry />} />
           <Route path="attendance" element={<StudentAttendance />} />
           <Route path="check/:day" element={<StudentCheck />} />
+          <Route path="calendar" element={<StudentCalendar />} />
         </Route>
 
         <Route path="/parent" element={<Area role="parent" nav={PARENT_NAV} />}>
@@ -147,6 +154,7 @@ export default function App() {
           <Route path="progress" element={<ParentProgress />} />
           <Route path="messages" element={<ParentMessages />} />
           <Route path="settings" element={<ParentSettings />} />
+          <Route path="calendar" element={<ParentCalendar />} />
         </Route>
 
         {/* The old /app workspace is gone. */}

@@ -66,10 +66,15 @@ function ClassBody() {
           </Frame>
           <Frame label="schedule.frame" className="h-full" bodyClassName="flex h-full flex-col gap-3 p-6">
             <h2 className="font-grotesk text-[20px] font-extrabold tracking-[-0.01em]">Schedule</h2>
-            <p className="font-inter text-[15px] leading-6 text-navy-soft">Class days, days off, and which section you teach each class.</p>
-            <Button to={`/teacher/class/${cls.id}/schedule`} variant="orange" icon="calendar_month" className="mt-auto w-fit">
-              Set up the schedule
-            </Button>
+            <p className="font-inter text-[15px] leading-6 text-navy-soft">Class days, days off, and which section you teach each class. Move, cancel or add classes on the calendar.</p>
+            <div className="mt-auto flex flex-wrap gap-2">
+              <Button to={`/teacher/class/${cls.id}/calendar`} variant="orange" icon="calendar_month" className="w-fit">
+                Open the calendar
+              </Button>
+              <Button to={`/teacher/class/${cls.id}/schedule`} variant="outline" icon="tune" className="w-fit">
+                Set up the schedule
+              </Button>
+            </div>
           </Frame>
         </div>
       </section>

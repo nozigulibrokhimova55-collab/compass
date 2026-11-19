@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, type DragEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { BlockTitle } from '../../components/area/AreaBits'
 import { KindBadge } from '../../components/course/CourseBits'
 import { courseGate, sessionTitle, useTeacherClass } from '../../components/course/courseGate'
@@ -66,6 +67,7 @@ type Errors = Partial<Record<'startDate' | 'endDate' | 'classDays' | 'chapters' 
 
 function ScheduleSetup({ classId, className, book, saved, sessions, onSaved }: { classId: string; className: string; book: Book; saved: SavedSchedule | null; sessions: ClassSession[]; onSaved: () => Promise<void> }) {
   const notify = useToast()
+  const navigate = useNavigate()
   const today = toIso(useToday())
   const syl = book.syllabus
   const hasPast = sessions.some((s) => s.day < today)
@@ -133,6 +135,7 @@ function ScheduleSetup({ classId, className, book, saved, sessions, onSaved }: {
       const count = await saveCalendar(classId, book.id, { ...settings, chapters: chosen }, plan.sessions)
       notify(`Calendar saved: ${count} sessions for ${className}.`)
       await onSaved()
+      navigate(`/teacher/class/${classId}/calendar`)
     } catch (err) {
       console.error('Could not save the calendar', err)
       notify(errorMessage(err, 'We couldn’t save the calendar. Try again.'), 'error')
@@ -351,7 +354,9 @@ function ScheduleSetup({ classId, className, book, saved, sessions, onSaved }: {
         </section>
       ) : sessions.length > 0 ? (
         <section aria-labelledby="saved" className="mt-12">
-          <BlockTitle id="saved">{`Saved calendar · ${sessions.filter((s) => s.kind !== 'cancelled').length} classes`}</BlockTitle>
+          <BlockTitle id="saved" end={<Button to={`/teacher/class/${classId}/calendar`} variant="navy" icon="calendar_month">Open the calendar</Button>}>
+            {`Saved calendar · ${sessions.filter((s) => s.kind !== 'cancelled').length} classes`}
+          </BlockTitle>
           <SessionList book={book} sessions={sessions} today={today} />
         </section>
       ) : null}
