@@ -8,9 +8,10 @@ import { useToast } from '../../components/Toast'
 import { Button } from '../../components/ui/Button'
 import { Frame } from '../../components/ui/Frame'
 import { SectionHeader } from '../../components/ui/SectionHeader'
-import { allBooks, pagesLabel, type Book } from '../../lib/books'
+import { allBooks, isUploadBook, materialIdOf, pagesLabel, uploadBookId, type Book } from '../../lib/books'
 import { addCourseBook, atPage, chapterPdfLinks } from '../../lib/courseDb'
 import { errorMessage } from '../../lib/db'
+import { fetchMaterials, fileTypeLabel, MATERIALS_MIGRATION, MaterialsNotSetUpError, unitOf, type Material } from '../../lib/materialsDb'
 import { useCourse } from '../../lib/useCourse'
 
 export default function TeacherMaterials() {
@@ -24,12 +25,16 @@ export default function TeacherMaterials() {
     <>
       <BackLink to="/teacher/class">Class</BackLink>
       <SectionHeader as="h1" size="sm" align="left" script="the book" title="Course materials" className="mt-6" />
-      {gate ??
-        (course.book ? (
-          <BookView book={course.book} classId={cls.id} />
-        ) : (
-          <PickBook classId={cls.id} className={cls.name} unknown={course.unknownBook} onPicked={course.reload} />
-        ))}
+      {gate ?? (
+        <>
+          {course.book ? (
+            <BookView book={course.book} classId={cls.id} />
+          ) : (
+            <PickBook classId={cls.id} className={cls.name} unknown={course.unknownBook} onPicked={course.reload} />
+          )}
+          <UploadedFiles classId={cls.id} calendarBook={course.schedule?.bookId ?? null} />
+        </>
+      )}
     </>
   )
 }
@@ -100,16 +105,23 @@ function BookView({ book, classId }: { book: Book; classId: string }) {
       <div className="mt-10 grid items-start gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Frame label="book.frame" bodyClassName="p-6 md:p-8">
           <p className="font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-navy-soft">Textbook</p>
-          <h2 className="mt-1 font-grotesk text-[30px] font-black leading-tight tracking-[-0.02em]">{s.title}</h2>
-          <p className="mt-1 font-inter text-[17px] text-navy-soft">by {s.author}</p>
-          <div className="mt-5 rounded-2xl bg-[#F3F7FC] p-4">
-            <BookAttribution book={book} />
-            <p className="mt-2 font-inter text-[14px] leading-6 text-navy-soft">License: {s.license}.</p>
-          </div>
+          <h2 className="mt-1 break-words font-grotesk text-[30px] font-black leading-tight tracking-[-0.02em]">{s.title}</h2>
+          {s.author && <p className="mt-1 font-inter text-[17px] text-navy-soft">by {s.author}</p>}
+          {(s.attribution || s.license) && (
+            <div className="mt-5 rounded-2xl bg-[#F3F7FC] p-4">
+              <BookAttribution book={book} />
+              {s.license && <p className="mt-2 font-inter text-[14px] leading-6 text-navy-soft">License: {s.license}.</p>}
+            </div>
+          )}
           <div className="mt-6 flex flex-wrap gap-3">
             <Button to={`/teacher/class/${classId}/schedule`} variant="orange" icon="calendar_month">
               Set up the schedule
             </Button>
+            {isUploadBook(book.id) ? (
+              <Button to={`/teacher/class/${classId}/materials/${materialIdOf(book.id)}`} variant="outline" icon="description">
+                Open the file page
+              </Button>
+            ) : null}
           </div>
         </Frame>
         <Frame label="quizzes.frame" bodyClassName="p-6">
@@ -176,5 +188,69 @@ function BookView({ book, classId }: { book: Book; classId: string }) {
         </ol>
       </section>
     </>
+  )
+}
+
+/** "Your files": the class's uploaded books and notes, each linking to its own page. */
+function UploadedFiles({ classId, calendarBook }: { classId: string; calendarBook: string | null }) {
+  const [state, setState] = useState<{ files: Material[] } | { error: string; notSetUp: boolean } | null>(null)
+
+  useEffect(() => {
+    let live = true
+    fetchMaterials(classId)
+      .then((files) => live && setState({ files }))
+      .catch((err) => {
+        if (!(err instanceof MaterialsNotSetUpError)) console.error('Could not load uploaded files', err)
+        if (live) setState({ error: errorMessage(err, 'We couldn’t load your files.'), notSetUp: err instanceof MaterialsNotSetUpError })
+      })
+    return () => {
+      live = false
+    }
+  }, [classId])
+
+  return (
+    <section aria-labelledby="your-files" className="mt-14">
+      <BlockTitle id="your-files" end={<Button to="/teacher/quizzes" variant="outline" icon="upload_file">Upload a file</Button>}>
+        Your files
+      </BlockTitle>
+      {!state ? (
+        <p className="mt-6 font-inter text-[15px] text-navy">Loading your files…</p>
+      ) : 'error' in state ? (
+        <p role="status" className="mt-6 max-w-3xl rounded-xl bg-note px-4 py-3 font-inter text-[15px] leading-6">
+          {state.notSetUp ? (
+            <>
+              Saving files isn’t switched on yet. Ask Mauricio to run <span className="font-mono text-[14px]">{MATERIALS_MIGRATION}</span> in the Supabase SQL Editor.
+            </>
+          ) : (
+            state.error
+          )}
+        </p>
+      ) : state.files.length === 0 ? (
+        <p className="mt-6 w-fit max-w-3xl rounded-xl bg-white/85 px-4 py-3 font-inter text-[15px] leading-6 backdrop-blur-sm">
+          No files yet. Upload a PDF on the Quizzes page, check its chapters, and it shows up here.
+        </p>
+      ) : (
+        <ul className="mt-6 grid gap-6 md:grid-cols-2">
+          {state.files.map((f) => (
+            <li key={f.id}>
+              <Frame
+                label={`${f.fileType}.frame`}
+                tabEnd={calendarBook === uploadBookId(f.id) ? <span className="rounded-full bg-accent-strong px-2.5 py-0.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-white">Calendar</span> : undefined}
+                className="h-full"
+                bodyClassName="flex h-full flex-col gap-2 p-5 md:p-6"
+              >
+                <h3 className="break-words font-grotesk text-[20px] font-extrabold leading-tight tracking-[-0.01em]">{f.title}</h3>
+                <p className="font-mono text-[12px] uppercase tracking-[0.08em] text-navy-soft">
+                  {fileTypeLabel(f.fileType)} · {f.pageCount} {unitOf(f.fileType)}s
+                </p>
+                <Button to={`/teacher/class/${classId}/materials/${f.id}`} variant="navy" icon="arrow_forward" className="mt-auto w-fit">
+                  Open
+                </Button>
+              </Frame>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }

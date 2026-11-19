@@ -15,7 +15,7 @@ With no Supabase keys, Compass runs as a demo: sample data, nothing saved to a s
 ## Turn on Supabase
 
 1. Make a project at [supabase.com](https://supabase.com).
-2. In the dashboard, open **SQL Editor**, paste all of `supabase/schema.sql`, and run it. It is safe to run again, and you should run it again after updating the app, since new features add tables and functions.
+2. In the dashboard, open **SQL Editor**, paste all of `supabase/schema.sql`, and run it. It is safe to run again, and you should run it again after updating the app, since new features add tables and functions. Then run each file in `supabase/migrations/` the same way, oldest first: `20261106000001_syllabus_calendar.sql` (the class calendar), `20261120000001_uploaded_materials.sql` (uploaded PDFs and their chapters), then `20261121000001_chapter_quizzes.sql` (chapter quizzes and number answers). All are safe to run again. If you rerun `schema.sql`, rerun the migrations after it: the last one replaces two of its quiz functions.
 3. Open **Project Settings > API**. Copy `.env.example` to `.env.local` and fill in the project URL and the anon (publishable) key. Never use the `service_role` key here.
 4. Open **Authentication > URL Configuration**. Set the Site URL to where the app runs (`http://localhost:5173` while developing). Under Redirect URLs, add `/login` and `/reset-password` on that same address. Do the same for your live address when you deploy.
 5. Optional: under **Authentication > Providers > Email**, turn off **Confirm email** while testing. When it is on, new people see "Check your email" after signing up and must click the link before logging in.
@@ -23,16 +23,17 @@ With no Supabase keys, Compass runs as a demo: sample data, nothing saved to a s
 
 ## Turn on AI quiz questions (Gemini)
 
-The teacher's "Make questions" button asks Gemini to write questions from the lesson notes. The call goes through a Supabase Edge Function, so the Gemini key stays on the server and never reaches the browser. Without this step, live teachers see an error when they press "Make questions" (the demo is not affected).
+The teacher's "Make questions" button asks an AI model to write questions from the lesson notes or from a chapter of an uploaded book. The call goes through a Supabase Edge Function, so the key stays on the server and never reaches the browser. Only the notes or the chapter's text go to the model, never names or emails. Without this step, teachers see an error when they press "Make questions".
 
 1. Get a key at [aistudio.google.com](https://aistudio.google.com) (Get API key).
 2. Install the [Supabase CLI](https://supabase.com/docs/guides/cli) and log in: `supabase login`, then `supabase link --project-ref YOUR_PROJECT_REF` (the ref is in your project URL).
-3. Save the key as a secret and deploy the function:
+3. Pick the provider with secrets, then deploy the function:
    ```bash
-   supabase secrets set GEMINI_API_KEY=your-key
+   supabase secrets set LLM_PROVIDER=gemini LLM_API_KEY=your-key LLM_MODEL=the-model-id
    supabase functions deploy generate-quiz
    ```
-4. Optional: `supabase secrets set GEMINI_MODEL=gemini-3.8-flash` to pick a different model. That is already the default.
+   `LLM_PROVIDER` is `gemini` (Google's API) or `openai` (any OpenAI-compatible chat completions API; set `LLM_BASE_URL` for one that isn't api.openai.com). The older setup, `GEMINI_API_KEY` with an optional `GEMINI_MODEL`, still works on its own.
+4. The function reads `deno.json` in its folder for zod (the check on every question). `supabase functions deploy` picks it up.
 
 Only signed-in teachers can call it. It checks every answer the model sends back (4 different options, one right answer in range, a reason) and drops any question that fails. Teachers still review every question before publishing. Their notes are sent to Google to write the questions, and the page says so.
 
@@ -56,7 +57,7 @@ Only signed-in teachers can call it. It checks every answer the model sends back
 - `src/lib/session.tsx`: who is signed in (`useSession`), plus `logIn`, `signUp`, `signOut`, `sendReset`, `updatePassword`. `isDemo` is true for the sample class.
 - `src/lib/classData.tsx`: the signed-in person's class, roster, and quizzes (`useClassData`).
 - `src/lib/useAttendance.ts`: today's marks and the recent days.
-- `supabase/functions/generate-quiz/`: the Edge Function (`index.ts`) and its pure checks (`validate.ts`).
+- `supabase/functions/generate-quiz/`: the Edge Function (`index.ts`), the model call for either provider (`llm.ts`), chapter quizzes (`chapter.ts`: chunks, prompt, zod checks, near-duplicates) and the notes checks (`validate.ts`).
 - `supabase/schema.sql`: tables, the sign-up trigger, and row level security. Teachers only see their own classes, students only their own class, parents only their child. Students can't read quiz answers until they finish a quiz.
 - `src/App.tsx`: with Supabase on, `/teacher`, `/student`, and `/parent` need a login, and each person can only open their own area.
 

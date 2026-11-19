@@ -3,16 +3,23 @@ import type { SessionKind } from '../../lib/schedulePlan'
 import { Icon } from '../Icon'
 import { KIND_LABEL } from './courseGate'
 
-/** "Based on Conceptual Physics by Benjamin Crowell, CC BY-SA 3.0, lightandmatter.com", linked to the source. */
+/**
+ * "Based on Conceptual Physics by Benjamin Crowell, CC BY-SA 3.0, lightandmatter.com", linked to the source.
+ * Nothing for an uploaded file without a credit line.
+ */
 export function BookAttribution({ book, className = '' }: { book: Book; className?: string }) {
+  const { attribution, source } = book.syllabus
+  if (!attribution.trim()) return null
   return (
     <p className={`flex items-start gap-2 font-inter text-[14px] leading-6 text-navy-soft ${className}`}>
       <Icon name="menu_book" className="mt-0.5 text-[18px] text-select" />
       <span>
-        {book.syllabus.attribution}.{' '}
-        <a href={book.syllabus.source} target="_blank" rel="noreferrer" className="font-semibold text-navy underline underline-offset-2 hover:text-accent-strong">
-          Source
-        </a>
+        {attribution.replace(/\.$/, '')}.{' '}
+        {source && (
+          <a href={source} target="_blank" rel="noreferrer" className="font-semibold text-navy underline underline-offset-2 hover:text-accent-strong">
+            Source
+          </a>
+        )}
       </span>
     </p>
   )
