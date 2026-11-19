@@ -1,15 +1,20 @@
 import { useState } from 'react'
 import { BlockTitle, SampleTag } from '../../components/area/AreaBits'
 import { plural, useClassGate } from '../../components/area/classGate'
+import { sessionTitle } from '../../components/course/courseGate'
+import { ReadingLink } from '../../components/course/SessionViews'
 import { Icon } from '../../components/Icon'
 import { Button } from '../../components/ui/Button'
 import { Frame } from '../../components/ui/Frame'
 import { SectionHeader } from '../../components/ui/SectionHeader'
 import { StatCard } from '../../components/ui/StatCard'
 import { isoDate, longDay, type Mark } from '../../lib/attendance'
+import { getBook, type Book } from '../../lib/books'
+import type { ClassSession } from '../../lib/courseDb'
 import { useClassData } from '../../lib/classData'
 import { useCatchUpCheck, useDayTopic } from '../../lib/sampleData'
 import { useSession } from '../../lib/session'
+import { useMyCalendars, usePdfLinks } from '../../lib/useCalendars'
 import { useMyAttendance } from '../../lib/useMyAttendance'
 import { useToday } from '../../lib/useToday'
 
@@ -29,6 +34,12 @@ function AttendanceBody() {
   const now = useToday()
   const [view, setView] = useState({ year: now.getFullYear(), month: now.getMonth() })
   const month = useMyAttendance(view.year, view.month)
+  const { cls } = useClassData()
+  // The class calendar, when the teacher has made one: it says what each missed class covered.
+  const { calendars } = useMyCalendars()
+  const calendar = calendars.find((c) => c.classId === cls?.id) ?? null
+  const book = getBook(calendar?.bookId)
+  const { links } = usePdfLinks(book)
   const isThisMonth = view.year === now.getFullYear() && view.month === now.getMonth()
   const monthLabel = new Date(view.year, view.month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
   const shift = (by: number) => setView((v) => {
@@ -158,7 +169,7 @@ function AttendanceBody() {
           <ul className="mt-6 grid gap-6 md:grid-cols-2">
             {missed.map((day, i) => (
               <li key={day}>
-                <CatchUpCard day={day} number={i + 1} />
+                <CatchUpCard day={day} number={i + 1} book={book} links={links} session={calendar?.sessions.find((x) => x.day === day && x.kind !== 'cancelled') ?? null} />
               </li>
             ))}
           </ul>
@@ -168,10 +179,13 @@ function AttendanceBody() {
   )
 }
 
-function CatchUpCard({ day, number }: { day: string; number: number }) {
+function CatchUpCard({ day, number, book, links, session }: { day: string; number: number; book: Book | null; links: Record<number, string> | null; session: ClassSession | null }) {
   const { user } = useSession()
   const { cls } = useClassData()
-  const { topic } = useDayTopic(cls?.id, day)
+  const { topic: sampleTopic } = useDayTopic(cls?.id, day)
+  // The calendar's section wins over the topic saved on this device.
+  const covered = book && session && session.kind !== 'review' ? sessionTitle(book, session) : null
+  const topic = covered?.title ?? sampleTopic
   const check = useCatchUpCheck(user.id, day, topic)
   const done = check.score !== undefined
 
@@ -189,8 +203,18 @@ function CatchUpCard({ day, number }: { day: string; number: number }) {
       <p className="font-inter text-[16px] leading-7 text-navy-soft">
         {done
           ? `You did the check: ${check.score} of ${check.questions.length} right.`
-          : `Here’s a ${check.questions.length}-question check on ${check.topicName} so you don’t fall behind.`}
+          : covered
+            ? `Read the section, then try a ${check.questions.length}-question practice check. The check is still a sample on ${check.topicName}, not on this section.`
+            : `Here’s a ${check.questions.length}-question check on ${check.topicName} so you don’t fall behind.`}
       </p>
+      {book && session && covered && (
+        <div className="rounded-2xl bg-[#F3F7FC] p-4">
+          <p className="font-inter text-[15px] leading-6">
+            Read it first{covered.detail ? `: ${covered.detail}` : ''}. It’s the same section the class covered.
+          </p>
+          <ReadingLink book={book} links={links} session={session} className="mt-3" />
+        </div>
+      )}
       <Button to={`/student/check/${day}`} variant={done ? 'outline' : 'orange'} icon={done ? 'replay' : 'play_arrow'} className="mt-auto w-full sm:w-fit">
         {done ? 'Try it again' : 'Start the check'}
       </Button>

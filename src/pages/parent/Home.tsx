@@ -1,6 +1,7 @@
 import { SampleNote, SampleTag } from '../../components/area/AreaBits'
 import { Bento, BentoItem } from '../../components/area/Bento'
 import { Icon } from '../../components/Icon'
+import { ViewerCalendar } from '../../components/course/ViewerCalendar'
 import { ChildSwitcher } from '../../components/parent/ChildSwitcher'
 import { Button } from '../../components/ui/Button'
 import { Frame } from '../../components/ui/Frame'
@@ -8,11 +9,33 @@ import { SectionHeader } from '../../components/ui/SectionHeader'
 import { StatCard } from '../../components/ui/StatCard'
 import { StatementCard } from '../../components/ui/StatementCard'
 import { StickyNote } from '../../components/ui/StickyNote'
+import { getBook } from '../../lib/books'
 import { useChildren, useParentUpdates } from '../../lib/sampleData'
+import { useChildCalendars } from '../../lib/useCalendars'
 
 /** The parent banner every parent page shows while their pages run on sample data. */
 export function ParentSampleNote() {
   return <SampleNote className="mt-6 max-w-3xl">These pages show a sample family for now. Your own child’s updates will appear here once they’re connected.</SampleNote>
+}
+
+/** Real class calendars for the parent's linked children (not sample): today and the next class. Nothing shows without one. */
+function ChildClasses() {
+  const { children } = useChildCalendars()
+  return (
+    <>
+      {children.flatMap((child) =>
+        child.calendars.map((c) => (
+          <ViewerCalendar
+            key={`${child.childId}-${c.classId}`}
+            calendar={c}
+            heading={`${child.childName.split(' ')[0]} · ${getBook(c.bookId)?.syllabus.title ?? 'class'}`}
+            summary
+            calendarLink="/parent/calendar"
+          />
+        )),
+      )}
+    </>
+  )
 }
 
 /** Parent Home: one child's week in plain words, and one thing to ask tonight. */
@@ -104,6 +127,10 @@ export default function ParentHome() {
           See progress
         </Button>
         <SampleTag />
+      </div>
+
+      <div className="mt-6">
+        <ChildClasses />
       </div>
     </>
   )

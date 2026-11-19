@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "seed:accounts": "node --env-file=.env.local scripts/create-test-accounts.ts",
+    "seed:materials": "node --env-file=.env.local scripts/setup-course-materials.ts",
     "preview": "vite preview"
   },
   "dependencies": {
