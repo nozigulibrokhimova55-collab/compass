@@ -62,7 +62,8 @@ export function ClassDataProvider({ role, children }: { role: Role; children: Re
       if (cls && role === 'teacher') {
         const [roster, list] = await Promise.all([fetchRoster(cls.id), fetchQuizzes(cls.id)])
         students = roster.map((s) => ({ ...s, initials: initialsOf(s.name) }))
-        quizzes = list
+        // Chapter quiz drafts live in the same table; they show up on the Quizzes page, not as real quizzes.
+        quizzes = list.filter((q) => q.status === 'published')
       }
       if (cls && role === 'student') studentQuizzes = await fetchMyQuizzes()
       if (run === latest.current) setState({ loading: false, error: null, cls, students, quizzes, studentQuizzes })

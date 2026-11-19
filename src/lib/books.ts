@@ -44,6 +44,11 @@ export type Book = {
    * the license page). Book page p of a chapter is page `p - chapter.start_page + 1 + leadingPages` of its file.
    */
   leadingPages: number
+  /**
+   * For a book made from a teacher's uploaded file: the storage path of that one file. Chapters are page
+   * ranges inside it, so a book page is simply the PDF page.
+   */
+  wholeFile?: string
 }
 
 export const STORAGE_BUCKET = 'course-materials'
@@ -52,8 +57,24 @@ const BOOKS: Record<string, Book> = {
   'conceptual-physics': { id: 'conceptual-physics', syllabus: conceptualPhysics as Syllabus, leadingPages: 2 },
 }
 
+/** Book ids for a teacher's uploaded file: "upload-<material id>". */
+export const UPLOAD_PREFIX = 'upload-'
+export const isUploadBook = (id: string | null | undefined) => Boolean(id?.startsWith(UPLOAD_PREFIX))
+export const uploadBookId = (materialId: string) => `${UPLOAD_PREFIX}${materialId}`
+export const materialIdOf = (bookId: string) => bookId.slice(UPLOAD_PREFIX.length)
+
+/**
+ * Books made from uploaded files, added once their chapters are loaded (see ensureUploadedBooks in
+ * materialsDb.ts), so getBook() works the same for them everywhere.
+ */
+const UPLOADED = new Map<string, Book>()
+
+export function registerBook(book: Book) {
+  UPLOADED.set(book.id, book)
+}
+
 export function getBook(id: string | null | undefined): Book | null {
-  return (id && BOOKS[id]) || null
+  return (id && (BOOKS[id] ?? UPLOADED.get(id))) || null
 }
 
 export function allBooks(): Book[] {
@@ -75,11 +96,12 @@ export function sectionOf(book: Book, sectionId: string) {
 
 /** Where a chapter's PDF lives in the storage bucket. */
 export function chapterPath(book: Book, chapter: BookChapter) {
-  return `${book.id}/${chapter.file}`
+  return book.wholeFile ?? `${book.id}/${chapter.file}`
 }
 
 /** The page inside the chapter's PDF file where a printed book page starts. */
 export function filePage(book: Book, chapter: BookChapter, bookPage: number) {
+  if (book.wholeFile) return bookPage
   return bookPage - chapter.start_page + 1 + book.leadingPages
 }
 

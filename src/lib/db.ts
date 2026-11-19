@@ -118,15 +118,50 @@ export async function publishQuiz(input: { classId: string; title: string; topic
 // ---------------------------------------------------------------------------
 
 export type StudentQuiz = { id: string; title: string; dueDate: string | null; questionCount: number; finished: boolean; score: number }
-/** One question as a student sees it. `answer`, `why` and `choice` only come back once the quiz is finished. */
-export type StudentQuestion = { id: string; text: string; options: string[]; answer?: number; why?: string; choice?: number }
-export type StudentQuizDetail = { id: string; title: string; dueDate: string | null; finished: boolean; questions: StudentQuestion[] }
-export type QuizAnswer = { questionId: string; choice: number }
+/**
+ * One question as a student sees it. `answer`, `why` and `choice` only come back once the quiz is finished.
+ * Numeric questions (chapter quizzes) have no options: once finished they bring `answerNumber`, `value` (what the
+ * student typed) and `correct` instead of `answer` and `choice`.
+ */
+export type StudentQuestion = {
+  id: string
+  type: 'multiple_choice' | 'numeric'
+  text: string
+  options: string[]
+  unit: string | null
+  answer?: number
+  why?: string
+  choice?: number
+  answerNumber?: number | null
+  value?: number | null
+  correct?: boolean
+}
+/** `attribution`: the credit line of the book a chapter quiz came from, if it has one. */
+export type StudentQuizDetail = { id: string; title: string; dueDate: string | null; finished: boolean; attribution: string | null; questions: StudentQuestion[] }
+/** `choice` for multiple choice, `value` for numeric questions. */
+export type QuizAnswer = { questionId: string; choice?: number; value?: number }
 
-type RawQuizDetail = { id: string; title: string; due_date: string | null; finished: boolean; questions: StudentQuestion[] }
+type RawQuestion = { id: string; type?: string; text: string; options: string[]; unit?: string | null; answer?: number; why?: string; choice?: number | null; answer_number?: number | string | null; value?: number | string | null; correct?: boolean | null }
+type RawQuizDetail = { id: string; title: string; due_date: string | null; finished: boolean; attribution?: string | null; questions: RawQuestion[] }
+
+const num = (v: number | string | null | undefined) => (v === null || v === undefined ? null : Number(v))
 
 function toDetail(raw: RawQuizDetail): StudentQuizDetail {
-  return { id: raw.id, title: raw.title, dueDate: raw.due_date, finished: raw.finished, questions: raw.questions ?? [] }
+  const questions = (raw.questions ?? []).map((q): StudentQuestion => {
+    const numeric = q.type === 'numeric'
+    return {
+      id: q.id,
+      type: numeric ? 'numeric' : 'multiple_choice',
+      text: q.text,
+      options: q.options ?? [],
+      unit: q.unit ?? null,
+      ...(q.answer !== undefined ? { answer: q.answer } : {}),
+      ...(q.why !== undefined ? { why: q.why } : {}),
+      ...(q.choice !== undefined && q.choice !== null ? { choice: q.choice } : {}),
+      ...(numeric && q.answer_number !== undefined ? { answerNumber: num(q.answer_number), value: num(q.value), correct: q.correct === true } : {}),
+    }
+  })
+  return { id: raw.id, title: raw.title, dueDate: raw.due_date, finished: raw.finished, attribution: raw.attribution ?? null, questions }
 }
 
 /** Published quizzes for the student's class, with whether they finished and their score. */
@@ -153,7 +188,7 @@ export async function fetchQuizForStudent(quizId: string): Promise<StudentQuizDe
 export async function submitQuiz(quizId: string, answers: QuizAnswer[]): Promise<StudentQuizDetail> {
   const { data, error } = await client().rpc('submit_quiz', {
     p_quiz: quizId,
-    p_answers: answers.map((a) => ({ question_id: a.questionId, choice: a.choice })),
+    p_answers: answers.map((a) => (a.value !== undefined ? { question_id: a.questionId, value: a.value } : { question_id: a.questionId, choice: a.choice })),
   })
   if (error) throw error
   return toDetail(data as RawQuizDetail)

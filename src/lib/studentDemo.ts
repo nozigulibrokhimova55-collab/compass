@@ -44,8 +44,11 @@ export function demoQuizDetail(quizId: string, choices?: number[]): StudentQuizD
     title: meta.title,
     dueDate: setup.due,
     finished: Boolean(picked),
+    attribution: null,
     questions: questions.map((q, i) => ({
       id: q.id,
+      type: 'multiple_choice' as const,
+      unit: null,
       text: q.text,
       options: q.options,
       ...(picked ? { answer: q.answer, why: q.why, choice: picked[i] } : {}),

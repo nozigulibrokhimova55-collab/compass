@@ -3,6 +3,7 @@
 // supabase/migrations/20261106000001_syllabus_calendar.sql. Pages never import the Supabase client directly.
 
 import { chapterPath, filePage, STORAGE_BUCKET, type Book, type BookChapter } from './books'
+import { ensureUploadedBooks } from './materialsDb'
 import type { ScheduleSettings, SessionKind } from './schedulePlan'
 import { supabase } from './supabase'
 
@@ -58,16 +59,22 @@ export async function addCourseBook(classId: string, bookId: string) {
   check(error)
 }
 
-/** Links that open each chapter's PDF (valid for an hour), keyed by chapter number. */
+/**
+ * Links that open each chapter's PDF (valid for an hour), keyed by chapter number. A book made from an
+ * uploaded file has one file for every chapter, and only its teacher can open it, so students and parents
+ * get no links for it.
+ */
 export async function chapterPdfLinks(book: Book): Promise<Record<number, string>> {
   const chapters = book.syllabus.chapters
-  const { data, error } = await client().storage.from(STORAGE_BUCKET).createSignedUrls(chapters.map((c) => chapterPath(book, c)), 3600)
+  const paths = [...new Set(chapters.map((c) => chapterPath(book, c)))]
+  const { data, error } = await client().storage.from(STORAGE_BUCKET).createSignedUrls(paths, 3600)
   if (error) throw error
+  const signed = new Map(paths.map((p, i) => [p, data?.[i]?.signedUrl ?? null]))
   const out: Record<number, string> = {}
-  chapters.forEach((c, i) => {
-    const url = data?.[i]?.signedUrl
+  for (const c of chapters) {
+    const url = signed.get(chapterPath(book, c))
     if (url) out[c.number] = url
-  })
+  }
   return out
 }
 
@@ -165,6 +172,8 @@ async function calendarsFor(classIds: string[] | null): Promise<CourseCalendar[]
   check(error)
   const ids = (schedules ?? []).map((r) => r.class_id as string)
   if (ids.length === 0) return []
+  // Calendars built from an uploaded file need its chapters before getBook() can find them.
+  await ensureUploadedBooks((schedules ?? []).map((r) => r.book_id as string)).catch((err) => console.error('Could not load an uploaded book', err))
   const [{ data: sessions, error: sErr }, { data: classes }] = await Promise.all([
     client().from('class_sessions').select(SESSION_COLUMNS).in('class_id', ids).order('day'),
     // Parents can't read class names; students and teachers can.

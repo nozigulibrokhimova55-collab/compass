@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Loading } from '../../components/area/AreaBits'
 import { QuizResults, QuizRunner, type ResultQuestion } from '../../components/student/QuizRunner'
+import { Icon } from '../../components/Icon'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { useClassData } from '../../lib/classData'
@@ -45,9 +46,23 @@ export default function StudentQuiz() {
 
   const quiz = load.quiz
   if (quiz.finished) {
-    const questions: ResultQuestion[] = quiz.questions.map((q) => ({ id: q.id, text: q.text, options: q.options, answer: q.answer ?? -1, why: q.why ?? '', choice: q.choice ?? -1 }))
-    const missed = questions.some((q) => q.choice !== q.answer)
+    const questions: ResultQuestion[] = quiz.questions.map((q) => ({
+      id: q.id,
+      type: q.type,
+      unit: q.unit,
+      text: q.text,
+      options: q.options,
+      answer: q.answer ?? -1,
+      why: q.why ?? '',
+      choice: q.choice ?? -1,
+      answerNumber: q.answerNumber,
+      value: q.value,
+      correct: q.correct,
+    }))
+    // Retries only bring back multiple choice questions for now.
+    const missed = questions.some((q) => q.type !== 'numeric' && q.choice !== q.answer)
     return (
+      <>
       <QuizResults
         eyebrow="Results"
         title={quiz.title}
@@ -65,10 +80,13 @@ export default function StudentQuiz() {
           </>
         }
       />
+      <Credit text={quiz.attribution} />
+      </>
     )
   }
 
   return (
+    <>
     <QuizRunner
       key={quiz.id}
       eyebrow="Quiz"
@@ -80,7 +98,7 @@ export default function StudentQuiz() {
         try {
           const done = await finishQuiz(
             quiz.id,
-            answers.map((a) => ({ questionId: a.questionId, choice: a.choice })),
+            answers.map((a) => (a.value !== undefined ? { questionId: a.questionId, value: a.value } : { questionId: a.questionId, choice: a.choice })),
           )
           save(Object.fromEntries(answers.map((a) => [a.questionId, a.confidence])))
           setLoad({ quiz: done, error: null })
@@ -89,5 +107,18 @@ export default function StudentQuiz() {
         }
       }}
     />
+    <Credit text={quiz.attribution} />
+    </>
+  )
+}
+
+/** "Based on Conceptual Physics by Benjamin Crowell, CC BY-SA 3.0", when the quiz came from a book that has one. */
+function Credit({ text }: { text: string | null }) {
+  if (!text) return null
+  return (
+    <p className="mx-auto mt-8 flex max-w-2xl items-start gap-2 rounded-2xl bg-white/90 px-4 py-3 font-inter text-[14px] leading-6 text-navy-soft backdrop-blur-sm">
+      <Icon name="menu_book" className="mt-0.5 text-[18px] text-select" />
+      {text}
+    </p>
   )
 }

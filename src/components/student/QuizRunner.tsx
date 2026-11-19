@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { parseNumber } from '../../lib/numbers'
 import type { Confidence } from '../../lib/sampleData'
 import { CONFIDENCE_LABEL, CONFIDENCE_OPTIONS } from './confidence'
 import { Icon } from '../Icon'
@@ -8,9 +9,15 @@ import { Frame } from '../ui/Frame'
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
 
-export type RunnerQuestion = { id: string; text: string; options: string[] }
-export type RunnerAnswer = { questionId: string; choice: number; confidence: Confidence }
-export type ResultQuestion = RunnerQuestion & { answer: number; why: string; choice: number }
+/** `type` "numeric": the student types a number (with `unit` shown next to the box) instead of picking an option. */
+export type RunnerQuestion = { id: string; text: string; options: string[]; type?: 'multiple_choice' | 'numeric'; unit?: string | null }
+/** `choice` for multiple choice, `value` for numeric. */
+export type RunnerAnswer = { questionId: string; choice?: number; value?: number; confidence: Confidence }
+/** For numeric questions, `correct` comes from the database (it knows the tolerance). */
+export type ResultQuestion = RunnerQuestion & { answer: number; why: string; choice: number; answerNumber?: number | null; value?: number | null; correct?: boolean }
+
+const isNumeric = (q: RunnerQuestion) => q.type === 'numeric'
+const withUnit = (n: number | null | undefined, unit?: string | null) => (n === null || n === undefined ? '' : `${n}${unit ? ` ${unit}` : ''}`)
 
 export function BackLink({ to, children }: { to: string; children: string }) {
   return (
@@ -37,6 +44,7 @@ export function QuizRunner({ title, eyebrow, questions, backTo, backLabel, onFin
   const total = questions.length
   const [index, setIndex] = useState(0)
   const [picks, setPicks] = useState<(number | undefined)[]>(() => questions.map(() => undefined))
+  const [typed, setTyped] = useState<string[]>(() => questions.map(() => ''))
   const [sure, setSure] = useState<(Confidence | undefined)[]>(() => questions.map(() => undefined))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -60,7 +68,9 @@ export function QuizRunner({ title, eyebrow, questions, backTo, backLabel, onFin
   }
 
   const q = questions[index]
-  const picked = picks[index]
+  const numeric = isNumeric(q)
+  const typedValue = parseNumber(typed[index] ?? '')
+  const picked = numeric ? (typedValue === null ? undefined : 0) : picks[index]
   const confidence = sure[index]
   const ready = picked !== undefined && confidence !== undefined
   const last = index === total - 1
@@ -70,7 +80,13 @@ export function QuizRunner({ title, eyebrow, questions, backTo, backLabel, onFin
     setSaving(true)
     setError(null)
     try {
-      await onFinish(questions.map((question, i) => ({ questionId: question.id, choice: picks[i] as number, confidence: sure[i] as Confidence })))
+      await onFinish(
+        questions.map((question, i) =>
+          isNumeric(question)
+            ? { questionId: question.id, value: parseNumber(typed[i]) as number, confidence: sure[i] as Confidence }
+            : { questionId: question.id, choice: picks[i] as number, confidence: sure[i] as Confidence },
+        ),
+      )
     } catch (err) {
       console.error('Could not save the answers', err)
       setError(err instanceof Error && err.message ? err.message : 'We couldn’t save your answers. Try again.')
@@ -106,6 +122,29 @@ export function QuizRunner({ title, eyebrow, questions, backTo, backLabel, onFin
         <h1 ref={headingRef} tabIndex={-1} className="font-grotesk text-[22px] font-extrabold leading-snug tracking-[-0.01em] outline-none md:text-[26px]">
           {q.text}
         </h1>
+        {numeric ? (
+          <div className="mt-5">
+            <label htmlFor={`answer-${q.id}`} className="font-inter text-[16px] font-semibold">
+              Your answer
+            </label>
+            <div className="mt-2 flex items-center gap-3">
+              <input
+                id={`answer-${q.id}`}
+                inputMode="decimal"
+                autoComplete="off"
+                value={typed[index]}
+                onChange={(e) => setTyped((t) => setAt(t, e.target.value))}
+                aria-invalid={typed[index].trim() !== '' && typedValue === null}
+                aria-describedby={`answer-${q.id}-hint`}
+                className="block min-h-16 w-full max-w-[14rem] rounded-2xl border-2 border-card-line bg-white px-4 font-inter text-[20px] text-navy focus:border-navy focus:outline-none focus:ring-4 focus:ring-select/20 aria-[invalid=true]:border-accent-strong"
+              />
+              {q.unit && <span className="font-inter text-[18px] font-semibold">{q.unit}</span>}
+            </div>
+            <p id={`answer-${q.id}-hint`} className={`mt-2 font-inter text-[14px] ${typed[index].trim() !== '' && typedValue === null ? 'font-medium text-accent-strong' : 'text-navy-soft'}`}>
+              {typed[index].trim() !== '' && typedValue === null ? 'Type just a number, like 12.5.' : 'Just the number. Close enough counts.'}
+            </p>
+          </div>
+        ) : (
         <div role="radiogroup" aria-label="Answers" className="mt-5 grid gap-3">
           {q.options.map((option, i) => {
             const on = picked === i
@@ -126,6 +165,7 @@ export function QuizRunner({ title, eyebrow, questions, backTo, backLabel, onFin
             )
           })}
         </div>
+        )}
 
         {picked !== undefined && (
           <fieldset className="step-in mt-6 rounded-2xl bg-[#F3F7FC] p-4">
@@ -175,7 +215,7 @@ export function QuizRunner({ title, eyebrow, questions, backTo, backLabel, onFin
           </Button>
         )}
       </div>
-      {!ready && <p className="mt-3 text-center font-inter text-[14px] text-navy-soft">{picked === undefined ? 'Tap an answer.' : 'Now tap how sure you are.'}</p>}
+      {!ready && <p className="mt-3 text-center font-inter text-[14px] text-navy-soft">{picked === undefined ? (numeric ? 'Type your answer.' : 'Tap an answer.') : 'Now tap how sure you are.'}</p>}
     </div>
   )
 }
@@ -193,7 +233,8 @@ type ResultsProps = {
 /** Score, then every question with the right answer, their pick, how sure they were, and why. */
 export function QuizResults({ title, eyebrow, questions, confidence, note, actions }: ResultsProps) {
   const total = questions.length
-  const right = questions.filter((q) => q.choice === q.answer).length
+  const isRight = (q: ResultQuestion) => (isNumeric(q) ? q.correct === true : q.choice === q.answer)
+  const right = questions.filter(isRight).length
   const headingRef = useRef<HTMLHeadingElement>(null)
   useEffect(() => {
     headingRef.current?.focus()
@@ -216,7 +257,7 @@ export function QuizResults({ title, eyebrow, questions, confidence, note, actio
 
       <ol className="mt-8 grid gap-6">
         {questions.map((q, n) => {
-          const ok = q.choice === q.answer
+          const ok = isRight(q)
           const c = confidence[q.id]
           return (
             <li key={q.id}>
@@ -230,6 +271,26 @@ export function QuizResults({ title, eyebrow, questions, confidence, note, actio
                 bodyClassName="p-5 md:p-6"
               >
                 <h2 className="font-grotesk text-[19px] font-extrabold leading-snug tracking-[-0.01em]">{q.text}</h2>
+                {isNumeric(q) ? (
+                  <ul className="mt-4 grid gap-2">
+                    <li className="flex items-start gap-3 rounded-xl border-2 border-[#1F6B3A] bg-[#E3F5EA] px-4 py-2.5 font-inter text-[15px] leading-6 text-[#1F5C35]">
+                      <Icon name="check_circle" className="mt-0.5 text-[18px]" filled />
+                      <span className="flex-1">
+                        <span className="block font-mono text-[11px] font-semibold uppercase tracking-[0.1em]">{ok ? 'Right answer · yours was close enough' : 'Right answer'}</span>
+                        {withUnit(q.answerNumber, q.unit)}
+                      </span>
+                    </li>
+                    {!ok && (
+                      <li className="flex items-start gap-3 rounded-xl border-2 border-accent-strong bg-[#FBE1D8] px-4 py-2.5 font-inter text-[15px] leading-6 text-[#9C3412]">
+                        <Icon name="cancel" className="mt-0.5 text-[18px]" filled />
+                        <span className="flex-1">
+                          <span className="block font-mono text-[11px] font-semibold uppercase tracking-[0.1em]">Your answer</span>
+                          {withUnit(q.value, q.unit)}
+                        </span>
+                      </li>
+                    )}
+                  </ul>
+                ) : (
                 <ul className="mt-4 grid gap-2">
                   {q.options.map((option, i) => {
                     const isAnswer = i === q.answer
@@ -249,6 +310,7 @@ export function QuizResults({ title, eyebrow, questions, confidence, note, actio
                     )
                   })}
                 </ul>
+                )}
                 {c && (
                   <p className="mt-3 font-inter text-[14px] text-navy-soft">
                     {CONFIDENCE_LABEL[c]}.{!ok && c === 'sure' ? ' This one’s worth a second look: sure-but-wrong ideas stick around.' : ''}

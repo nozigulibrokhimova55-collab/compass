@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type DragEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BlockTitle } from '../../components/area/AreaBits'
 import { KindBadge } from '../../components/course/CourseBits'
 import { courseGate, sessionTitle, useTeacherClass } from '../../components/course/courseGate'
@@ -14,7 +14,7 @@ import { SectionHeader } from '../../components/ui/SectionHeader'
 import { StatCard } from '../../components/ui/StatCard'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { longDay } from '../../lib/attendance'
-import type { Book } from '../../lib/books'
+import { getBook, type Book } from '../../lib/books'
 import type { ClassSession, SavedSchedule } from '../../lib/courseDb'
 import { saveCalendar } from '../../lib/courseDb'
 import { errorMessage } from '../../lib/db'
@@ -34,7 +34,9 @@ const WEEKDAYS = [
 
 export default function TeacherSchedule() {
   const t = useTeacherClass()
-  const course = useCourse(t.cls?.id)
+  // "Add chapters to the calendar" on an uploaded file opens this page with ?book=upload-<id>.
+  const [params] = useSearchParams()
+  const course = useCourse(t.cls?.id, params.get('book'))
   if (!t.ok) return t.screen
   const cls = t.cls
   const gate = courseGate(course)
@@ -50,7 +52,7 @@ export default function TeacherSchedule() {
           </EmptyState>
         ) : (
           <ScheduleSetup
-            key={course.schedule?.updatedAt ?? 'new'}
+            key={`${course.book.id}-${course.schedule?.updatedAt ?? 'new'}`}
             classId={cls.id}
             className={cls.name}
             book={course.book}
@@ -71,10 +73,12 @@ function ScheduleSetup({ classId, className, book, saved, sessions, onSaved }: {
   const today = toIso(useToday())
   const syl = book.syllabus
   const hasPast = sessions.some((s) => s.day < today)
+  // The saved calendar uses another book: keep its dates and days, but start the chapter list from this book.
+  const otherBook = saved && saved.bookId !== book.id ? (getBook(saved.bookId)?.syllabus.title ?? 'another book') : null
 
   const [settings, setSettings] = useState<ScheduleSettings>(() =>
     saved
-      ? { startDate: saved.startDate, endDate: saved.endDate, classDays: saved.classDays, classTime: saved.classTime, noClassDates: saved.noClassDates, chapters: saved.chapters, squeeze: saved.squeeze }
+      ? { startDate: saved.startDate, endDate: saved.endDate, classDays: saved.classDays, classTime: saved.classTime, noClassDates: saved.noClassDates, chapters: otherBook ? syl.core_chapters : saved.chapters, squeeze: otherBook ? false : saved.squeeze }
       : { startDate: today, endDate: addDaysIso(today, 7 * 12), classDays: [2, 4], classTime: '10:00', noClassDates: [], chapters: syl.core_chapters, squeeze: false },
   )
   // Every chapter, in the teacher's order: chosen ones first (in their order), then the rest.
@@ -148,6 +152,13 @@ function ScheduleSetup({ classId, className, book, saved, sessions, onSaved }: {
 
   return (
     <>
+      {otherBook && (
+        <p className="mt-8 max-w-3xl rounded-xl bg-note px-4 py-3 font-inter text-[15px] leading-6">
+          <Icon name="swap_horiz" className="mr-1.5 align-[-4px] text-[20px] text-[#6B3F0E]" />
+          Your calendar is built from {otherBook}. Saving here builds it from {syl.title} instead.
+          {hasPast ? ' Past classes stay as they were.' : ''}
+        </p>
+      )}
       {hasPast && (
         <p className="mt-8 max-w-3xl rounded-xl bg-white/90 px-4 py-3 font-inter text-[15px] leading-6 backdrop-blur-sm">
           <Icon name="history" className="mr-1.5 align-[-4px] text-[20px] text-select" />
