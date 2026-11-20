@@ -1,6 +1,7 @@
 // Cleans page text: drops running headers, footers and page numbers, joins hyphenated words,
 // and collapses extra whitespace.
 
+import { stripControl } from './extract.ts'
 import type { SourceDoc, SourceLine, SourcePage } from './types.ts'
 
 /** Headers and footers live in the top and bottom tenth of the page. */
@@ -36,7 +37,7 @@ export function repeatedLines(pages: SourcePage[], atLeast = Infinity): Set<stri
 
 /** Joins "arith-" + "metic" across a line break, then tidies spaces and blank lines. */
 export function tidy(text: string): string {
-  return text
+  return stripControl(text)
     .replace(/([A-Za-z])-\n\s*([a-z])/g, '$1$2')
     .replace(/[ \t\u00a0]+/g, ' ')
     .split('\n')
