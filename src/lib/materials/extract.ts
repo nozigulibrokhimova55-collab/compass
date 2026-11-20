@@ -3,6 +3,13 @@
 
 import type { SourceDoc, SourceLine, SourcePage } from './types.ts'
 
+/**
+ * Invisible characters PDFs sometimes carry in their text: null characters (Postgres refuses to store them,
+ * "unsupported Unicode escape sequence") and other control characters. Tabs and line breaks stay.
+ */
+const CONTROL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\uFFFE\uFFFF]/g
+export const stripControl = (s: string) => s.replace(CONTROL, '')
+
 /** The parts of a pdf.js TextItem this file uses. */
 export type TextItemLike = { str: string; transform: number[]; width: number; height: number; hasEOL?: boolean }
 
@@ -20,7 +27,7 @@ export function linesFromItems(items: TextItemLike[], pageHeight: number): Sourc
   let lastEnd = 0
 
   const flush = () => {
-    const t = text.replace(/\s+/g, ' ').trim()
+    const t = stripControl(text).replace(/\s+/g, ' ').trim()
     if (t && baseline !== null) lines.push({ text: t, size: Math.round(size * 10) / 10, y: Math.min(1, Math.max(0, 1 - baseline / pageHeight)) })
     text = ''
     size = 0
@@ -53,8 +60,7 @@ export function linesFromItems(items: TextItemLike[], pageHeight: number): Sourc
 
 /** A .md or .txt file as one "page" per line, so chapter ranges are line ranges. */
 export function docFromText(fileName: string, kind: 'md' | 'txt', text: string): SourceDoc {
-  const pages: SourcePage[] = text
-    .replace(/\r\n?/g, '\n')
+  const pages: SourcePage[] = stripControl(text.replace(/\r\n?/g, '\n'))
     .split('\n')
     .map((line, i) => ({ number: i + 1, lines: [{ text: line, size: 0, y: 0 }] }))
   return { kind, fileName, unit: 'line', pages, outline: [] }
