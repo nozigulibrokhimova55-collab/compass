@@ -6,6 +6,7 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { Frame } from '../../components/ui/Frame'
 import { SectionHeader } from '../../components/ui/SectionHeader'
 import { dueText } from '../../components/student/format'
+import { LiveNow } from '../../components/student/LiveNow'
 import { isoDate } from '../../lib/attendance'
 import { useClassData } from '../../lib/classData'
 import { useToday } from '../../lib/useToday'
@@ -47,6 +48,7 @@ function QuizList() {
   return (
     <>
       <SectionHeader as="h1" size="sm" align="left" script="one at a time" title="Quizzes" />
+      <LiveNow />
 
       {studentQuizzes.length === 0 ? (
         <EmptyState label="quizzes.frame" icon="quiz" title="No quizzes yet" className="mt-10 max-w-xl" action={{ label: 'Check again', icon: 'refresh', onClick: () => void reload() }}>

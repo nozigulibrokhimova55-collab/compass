@@ -3,6 +3,7 @@ import { Bento, BentoItem } from '../../components/area/Bento'
 import { plural, useClassGate } from '../../components/area/classGate'
 import { ViewerCalendar } from '../../components/course/ViewerCalendar'
 import { FamilyCard } from '../../components/student/FamilyCard'
+import { LiveNow } from '../../components/student/LiveNow'
 import { dueText } from '../../components/student/format'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -43,6 +44,8 @@ function HomeBody() {
     <>
       <SectionHeader as="h1" size="sm" align="left" script="hey there" title={`Hi, ${firstName(user.name)}`} />
       {cls && <p className="mt-4 w-fit rounded-full bg-white/85 px-3 py-1 font-inter text-[15px] text-navy backdrop-blur-sm">You’re in {cls.name}</p>}
+
+      <LiveNow />
 
       {calendars.map((c) => (
         <ViewerCalendar key={c.classId} calendar={c} heading={`${c.className ?? 'Class'} · today and next`} summary calendarLink="/student/calendar" />

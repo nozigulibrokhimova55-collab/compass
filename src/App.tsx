@@ -23,6 +23,8 @@ const TeacherMaterials = lazy(() => import('./pages/teacher/Materials'))
 const TeacherMaterial = lazy(() => import('./pages/teacher/Material'))
 const TeacherSchedule = lazy(() => import('./pages/teacher/Schedule'))
 const TeacherCalendar = lazy(() => import('./pages/teacher/Calendar'))
+const TeacherLive = lazy(() => import('./pages/teacher/Live'))
+const TeacherLiveHost = lazy(() => import('./pages/teacher/LiveHost'))
 const StudentHome = lazy(() => import('./pages/student/Home'))
 const StudentQuizzes = lazy(() => import('./pages/student/Quizzes'))
 const StudentQuiz = lazy(() => import('./pages/student/Quiz'))
@@ -31,6 +33,7 @@ const StudentAttendance = lazy(() => import('./pages/student/Attendance'))
 const StudentRetry = lazy(() => import('./pages/student/Retry'))
 const StudentCheck = lazy(() => import('./pages/student/Check'))
 const StudentCalendar = lazy(() => import('./pages/student/Calendar'))
+const StudentLive = lazy(() => import('./pages/student/Live'))
 const ParentHome = lazy(() => import('./pages/parent/Home'))
 const ParentProgress = lazy(() => import('./pages/parent/Progress'))
 const ParentMessages = lazy(() => import('./pages/parent/Messages'))
@@ -42,6 +45,7 @@ const TEACHER_NAV: AreaNavItem[] = [
   { to: '/teacher', label: 'Home', icon: 'home', end: true },
   { to: '/teacher/attendance', label: 'Attendance', icon: 'how_to_reg' },
   { to: '/teacher/quizzes', label: 'Quizzes', icon: 'quiz' },
+  { to: '/teacher/live', label: 'Live', icon: 'sensors' },
   { to: '/teacher/reports', label: 'Reports', icon: 'insights' },
   { to: '/teacher/class', label: 'Class', icon: 'groups' },
 ]
@@ -131,6 +135,8 @@ export default function App() {
           <Route index element={<TeacherHome />} />
           <Route path="attendance" element={<TeacherAttendance />} />
           <Route path="quizzes" element={<TeacherQuizzes />} />
+          <Route path="live" element={<TeacherLive />} />
+          <Route path="live/:sessionId" element={<TeacherLiveHost />} />
           <Route path="reports" element={<TeacherReports />} />
           <Route path="reports/:quizId" element={<TeacherReport />} />
           <Route path="class" element={<TeacherClass />} />
@@ -144,6 +150,7 @@ export default function App() {
           <Route index element={<StudentHome />} />
           <Route path="quiz/:quizId" element={<StudentQuiz />} />
           <Route path="quizzes" element={<StudentQuizzes />} />
+          <Route path="live/:sessionId" element={<StudentLive />} />
           <Route path="gaps" element={<StudentGaps />} />
           <Route path="retry" element={<StudentRetry />} />
           <Route path="attendance" element={<StudentAttendance />} />
