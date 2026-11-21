@@ -15,7 +15,7 @@ import { useClassData } from '../../lib/classData'
 import { useTopicProgress } from '../../lib/sampleData'
 import { useSession } from '../../lib/session'
 import { useMyCalendars } from '../../lib/useCalendars'
-import { useMistakes } from '../../lib/useMistakes'
+import { useFlashcards } from '../../lib/useFlashcards'
 import { useMyAttendance } from '../../lib/useMyAttendance'
 import { useToday } from '../../lib/useToday'
 
@@ -32,7 +32,7 @@ function HomeBody() {
   const { cls, studentQuizzes, reload } = useClassData()
   const now = useToday()
   const month = useMyAttendance(now.getFullYear(), now.getMonth())
-  const retries = useMistakes()
+  const retries = useFlashcards()
   const { improving } = useTopicProgress()
   const { calendars } = useMyCalendars()
   const monthName = now.toLocaleDateString('en-US', { month: 'long' })
