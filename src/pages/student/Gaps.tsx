@@ -8,8 +8,9 @@ import { Frame } from '../../components/ui/Frame'
 import { SectionHeader } from '../../components/ui/SectionHeader'
 import { StatementCard } from '../../components/ui/StatementCard'
 import { longDay } from '../../lib/attendance'
-import { progressWords, RETRY_GOAL, useTopicProgress } from '../../lib/sampleData'
-import { useMistakes, type Mistake } from '../../lib/useMistakes'
+import { progressWords, useTopicProgress } from '../../lib/sampleData'
+import { useFlashcards, type Flashcard } from '../../lib/useFlashcards'
+import { RETRY_GOAL } from '../../lib/flashcardsDb'
 
 export default function StudentGaps() {
   const gate = useClassGate({ student: true })
@@ -18,7 +19,7 @@ export default function StudentGaps() {
 
 function GapsBody() {
   const progress = useTopicProgress()
-  const retries = useMistakes()
+  const retries = useFlashcards()
 
   return (
     <>
@@ -79,7 +80,7 @@ function GapsBody() {
       <section aria-labelledby="retries" className="mt-14">
         <BlockTitle id="retries">Retry quizzes</BlockTitle>
         <p className="mt-3 max-w-2xl rounded-xl bg-white/85 px-4 py-3 font-inter text-[15px] leading-6 text-navy backdrop-blur-sm">
-          Questions you missed come back after 2 days, then after 7 days, until you get them right twice in a row. Your schedule is saved on this device for now.
+          Questions you missed come back after 2 days, then after 7 days, until you get them right twice in a row.
         </p>
         {retries.loading ? (
           <p className="mt-6 font-inter text-[16px] text-navy">Loading…</p>
@@ -87,7 +88,7 @@ function GapsBody() {
           <p role="alert" className="mt-6 font-inter text-[16px] text-navy">
             {retries.error}
           </p>
-        ) : retries.mistakes.length === 0 ? (
+        ) : retries.cards.length === 0 ? (
           <EmptyState label="retry.frame" icon="check_circle" title="Nothing to retry" className="mt-6 max-w-xl" action={{ label: 'Go to quizzes', to: '/student/quizzes' }}>
             When you miss a question on a quiz, it lands here and comes back for another try.
           </EmptyState>
@@ -123,7 +124,7 @@ function GapsBody() {
   )
 }
 
-function MistakeList({ items, showDue = false }: { items: Mistake[]; showDue?: boolean }) {
+function MistakeList({ items, showDue = false }: { items: Flashcard[]; showDue?: boolean }) {
   return (
     <ul className="flex flex-col gap-3">
       {items.slice(0, 5).map((m) => (
@@ -131,10 +132,10 @@ function MistakeList({ items, showDue = false }: { items: Mistake[]; showDue?: b
           <p className="font-inter text-[15px] font-semibold leading-6">{m.text}</p>
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-inter text-[13px] text-navy-soft">
             <span>{m.quizTitle}</span>
-            {showDue && <span>Back {longDay(m.schedule.due)}</span>}
-            <span className="flex items-center gap-1" aria-label={`Right ${m.schedule.streak} of ${RETRY_GOAL} times`}>
+            {showDue && <span>Back {longDay(m.dueOn)}</span>}
+            <span className="flex items-center gap-1" aria-label={`Right ${m.streak} of ${RETRY_GOAL} times`}>
               {Array.from({ length: RETRY_GOAL }, (_, i) => (
-                <span key={i} aria-hidden="true" className={`size-2.5 rounded-full ${i < m.schedule.streak ? 'bg-[#1F6B3A]' : 'border border-navy/30'}`} />
+                <span key={i} aria-hidden="true" className={`size-2.5 rounded-full ${i < m.streak ? 'bg-[#1F6B3A]' : 'border border-navy/30'}`} />
               ))}
             </span>
           </div>
