@@ -25,6 +25,7 @@ const TeacherSchedule = lazy(() => import('./pages/teacher/Schedule'))
 const TeacherCalendar = lazy(() => import('./pages/teacher/Calendar'))
 const TeacherLive = lazy(() => import('./pages/teacher/Live'))
 const TeacherLiveHost = lazy(() => import('./pages/teacher/LiveHost'))
+const TeacherMeetings = lazy(() => import('./pages/teacher/TeacherMeetings'))
 const StudentHome = lazy(() => import('./pages/student/Home'))
 const StudentQuizzes = lazy(() => import('./pages/student/Quizzes'))
 const StudentQuiz = lazy(() => import('./pages/student/Quiz'))
@@ -39,6 +40,7 @@ const ParentProgress = lazy(() => import('./pages/parent/Progress'))
 const ParentMessages = lazy(() => import('./pages/parent/Messages'))
 const ParentSettings = lazy(() => import('./pages/parent/Settings'))
 const ParentCalendar = lazy(() => import('./pages/parent/Calendar'))
+const ParentMeetings = lazy(() => import('./pages/parent/ParentMeetings'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 
 const TEACHER_NAV: AreaNavItem[] = [
@@ -47,6 +49,7 @@ const TEACHER_NAV: AreaNavItem[] = [
   { to: '/teacher/quizzes', label: 'Quizzes', icon: 'quiz' },
   { to: '/teacher/live', label: 'Live', icon: 'sensors' },
   { to: '/teacher/reports', label: 'Reports', icon: 'insights' },
+  { to: '/teacher/meetings', label: 'Meetings', icon: 'event_available' },
   { to: '/teacher/class', label: 'Class', icon: 'groups' },
 ]
 
@@ -63,6 +66,7 @@ const PARENT_NAV: AreaNavItem[] = [
   { to: '/parent/calendar', label: 'Calendar', icon: 'event_note' },
   { to: '/parent/progress', label: 'Progress', icon: 'trending_up' },
   { to: '/parent/messages', label: 'Messages', icon: 'forum' },
+  { to: '/parent/meetings', label: 'Meetings', icon: 'event_available' },
   { to: '/parent/settings', label: 'Settings', icon: 'settings' },
 ]
 
@@ -140,6 +144,7 @@ export default function App() {
           <Route path="reports" element={<TeacherReports />} />
           <Route path="reports/:quizId" element={<TeacherReport />} />
           <Route path="class" element={<TeacherClass />} />
+          <Route path="meetings" element={<TeacherMeetings />} />
           <Route path="class/:id/materials" element={<TeacherMaterials />} />
           <Route path="class/:id/materials/:materialId" element={<TeacherMaterial />} />
           <Route path="class/:id/schedule" element={<TeacherSchedule />} />
@@ -164,6 +169,7 @@ export default function App() {
           <Route path="messages" element={<ParentMessages />} />
           <Route path="settings" element={<ParentSettings />} />
           <Route path="calendar" element={<ParentCalendar />} />
+          <Route path="meetings" element={<ParentMeetings />} />
         </Route>
 
         {/* The old /app workspace is gone. */}
